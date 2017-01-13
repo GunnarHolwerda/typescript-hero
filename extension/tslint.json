@@ -52,6 +52,7 @@
             false,
             "as-needed"
         ],
+        "object-literal-sort-keys": false,
         "one-variable-per-declaration": false,
         "only-arrow-functions": [
             true,
