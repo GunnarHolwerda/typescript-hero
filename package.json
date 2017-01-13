@@ -10,6 +10,9 @@
     "develop": "concurrently --kill-others 'cd extension && npm run develop' 'cd server && npm run develop' 'cd common && npm run develop'"
   },
   "devDependencies": {
-    "concurrently": "^3.1.0"
+    "concurrently": "^3.1.0",
+    "tslint": "^4.3.1",
+    "tslint-jsdoc-rules": "^0.1.2",
+    "typescript": "^2.1.5"
   }
 }

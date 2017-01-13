@@ -19,6 +19,10 @@ connection.onInitialized(()=> {
     });
 });
 
+connection.onRequest('barbaz', lol => {
+    return lol;
+});
+
 connection.onNotification('foobar', () => {
     connection.sendNotification('window/logMessage', <LogMessageParams>{
         type: MessageType.Log,

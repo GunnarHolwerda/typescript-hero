@@ -42,8 +42,8 @@ export function activate(context: ExtensionContext): void {
         'typescriptHeroServer', 'TypeScript Hero Server', serverOptions, clientOptions
     );
 
-    
-    
+
+
     // Push the disposable to the context's subscriptions so that the 
     // client can be deactivated on extension deactivation
     context.subscriptions.push(client.start());
@@ -51,6 +51,12 @@ export function activate(context: ExtensionContext): void {
     setTimeout(() => {
         client.sendNotification('foobar');
     }, 1000);
+
+    setTimeout(() => {
+        client.sendRequest('barbaz', 'blublublub').then(result => {
+            console.log(result);
+        })
+    }, 5000);
 }
 
 /**
