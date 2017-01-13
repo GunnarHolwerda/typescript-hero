@@ -24,6 +24,6 @@ connection.onNotification('foobar', () => {
         type: MessageType.Log,
         message: 'Received foobar notification!'
     });
-})
+});
 
 connection.listen();

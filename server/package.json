@@ -1,27 +1,27 @@
 {
-	"name": "typescript-hero-server",
-	"version": "0.12.0",
-	"author": "Christoph Bühler <christoph.buehler@bluewin.ch>",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-eslint.git"
-	},
-	"bugs": {
-		"url": "https://github.com/Microsoft/vscode-eslint/issues"
-	},
-	"engines": {
-		"node": "*"
-	},
-	"dependencies": {
-		"vscode-languageserver": "^3.0.2-beta.3"
-	},
-	"devDependencies": {
-		"typescript": "^2.1.4",
-		"@types/node": "^6.0.45"
-	},
-	"scripts": {
-		"build": "installServerIntoExtension ../extension ./package.json ./tsconfig.json && tsc -p ./",
-		"compile": "installServerIntoExtension ../extension ./package.json ./tsconfig.json && tsc -w -p ./"
-	}
+    "name": "typescript-hero-server",
+    "version": "0.12.0",
+    "author": "Christoph Bühler <christoph.buehler@bluewin.ch>",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Microsoft/vscode-eslint.git"
+    },
+    "bugs": {
+        "url": "https://github.com/Microsoft/vscode-eslint/issues"
+    },
+    "engines": {
+        "node": "*"
+    },
+    "dependencies": {
+        "vscode-languageserver": "^3.0.2-beta.3"
+    },
+    "devDependencies": {
+        "typescript": "^2.1.4",
+        "@types/node": "^6.0.45"
+    },
+    "scripts": {
+        "build": "installServerIntoExtension ../extension ./package.json ./tsconfig.json && tsc -p ./",
+        "develop": "installServerIntoExtension ../extension ./package.json ./tsconfig.json && tsc -w -p ./"
+    }
 }

@@ -1,0 +1,15 @@
+{
+  "name": "typescript-hero-server",
+  "version": "0.0.0",
+  "author": "Christoph Bühler <christoph.buehler@bluewin.ch>",
+  "license": "MIT",
+  "engines": {
+    "node": "*"
+  },
+  "scripts": {
+    "develop": "concurrently --kill-others 'cd extension && npm run compile' 'cd server && npm run compile'"
+  },
+  "devDependencies": {
+    "concurrently": "^3.1.0"
+  }
+}
