@@ -7,7 +7,7 @@
     "node": "*"
   },
   "scripts": {
-    "develop": "concurrently --kill-others 'cd extension && npm run compile' 'cd server && npm run compile'"
+    "develop": "concurrently --kill-others 'cd extension && npm run develop' 'cd server && npm run develop'"
   },
   "devDependencies": {
     "concurrently": "^3.1.0"
