@@ -1,0 +1,22 @@
+{
+  "name": "typescript-hero-common",
+  "version": "0.12.0",
+  "description": "Common elements for the typescript hero extension",
+  "main": "index.js",
+  "scripts": {
+    "predevelop": "del-cli \"./**/*.js\" \"./**/*.js.map\" \"!./node_modules/**/*\"",
+    "develop": "tsc --sourceMap --watch -p ./tsconfig.json",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@git.smartive.ch:smartive/ch.smartive.time.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "del-cli": "^0.2.1",
+    "typescript": "^2.1.4"
+  },
+  "dependencies": {}
+}

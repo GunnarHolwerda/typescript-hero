@@ -24,6 +24,6 @@
   "scripts": {
     "build": "installServerIntoExtension ../extension ./package.json ./tsconfig.json && tsc -p ./",
     "predevelop": "del-cli -f ../extension/server",
-    "develop": "installServerIntoExtension ../extension ./package.json ./tsconfig.json && tsc -w -p ./"
+    "develop": "installServerIntoExtension ../extension ./package.json ./tsconfig.json && tsc -w --sourceMap -p ./"
   }
 }
