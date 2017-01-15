@@ -19,13 +19,13 @@
     "vscode-languageserver": "^3.0.2-beta.3"
   },
   "devDependencies": {
-    "@types/node": "^6.0.45",
+    "@types/node": "^6.0.60",
     "del-cli": "^0.2.1",
+    "tslint-jsdoc-rules": "^0.1.2",
     "typescript": "^2.1.4"
   },
   "scripts": {
-    "build": "installServerIntoExtension ../extension ./package.json ./tsconfig.json && tsc -p ./",
-    "predevelop": "del-cli -f ../extension/server",
-    "develop": "installServerIntoExtension ../extension ./package.json ./tsconfig.json && tsc -w --sourceMap -p ./"
+    "predevelop": "del-cli \"./**/*.js\" \"./**/*.js.map\" \"./**/*.d.ts\" \"!./node_modules/**/*\"",
+    "develop": "tsc -w --sourceMap -p ./"
   }
 }

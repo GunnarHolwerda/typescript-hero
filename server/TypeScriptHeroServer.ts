@@ -1,3 +1,4 @@
+import { ServerMessageBus } from './ServerMessageBus';
 import { createConnection, IConnection, IPCMessageReader, IPCMessageWriter } from 'vscode-languageserver/lib/main';
 import { InitializeResult, LogMessageParams, MessageType } from 'vscode-languageserver/lib/protocol';
 
@@ -12,22 +13,24 @@ connection.onInitialize((params): InitializeResult => {
     }
 });
 
-connection.onInitialized(()=> {
+connection.onInitialized(() => {
     connection.sendNotification('window/logMessage', <LogMessageParams>{
         type: MessageType.Log,
         message: 'Hello world from the server'
     });
 });
 
-connection.onRequest('barbaz', lol => {
-    return lol;
-});
+let bus = new ServerMessageBus(connection);
 
-connection.onNotification('foobar', () => {
-    connection.sendNotification('window/logMessage', <LogMessageParams>{
+bus.registerNotificationHandler('foobar').subscribe(foobar => {
+    console.log(foobar);
+    bus.endpoint.sendNotification('window/logMessage', <LogMessageParams>{
         type: MessageType.Log,
         message: 'Received foobar notification!'
     });
 });
 
 connection.listen();
+
+
+

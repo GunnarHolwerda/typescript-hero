@@ -66,8 +66,10 @@
     "inversify": "^2.0.0",
     "inversify-inject-decorators": "^2.0.0",
     "reflect-metadata": "^0.1.8",
+    "rxjs": "^5.0.3",
     "typescript": "~2.1.4",
     "typescript-hero-common": "../common",
+    "typescript-hero-server": "../server",
     "vscode-languageclient": "^3.0.2-beta.3"
   },
   "activationEvents": [

@@ -4,7 +4,7 @@
   "description": "Common elements for the typescript hero extension",
   "main": "index.js",
   "scripts": {
-    "predevelop": "del-cli \"./**/*.js\" \"./**/*.js.map\" \"!./node_modules/**/*\"",
+    "predevelop": "del-cli \"./**/*.js\" \"./**/*.js.map\" \"./**/*.d.ts\" \"!./node_modules/**/*\"",
     "develop": "tsc --sourceMap --watch -p ./tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,6 +16,7 @@
   "license": "MIT",
   "devDependencies": {
     "del-cli": "^0.2.1",
+    "tslint-jsdoc-rules": "^0.1.2",
     "typescript": "^2.1.4"
   },
   "dependencies": {
