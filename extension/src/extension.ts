@@ -20,7 +20,7 @@ export function activate(context: ExtensionContext): void {
     Injector.bind<ExtensionContext>('context').toConstantValue(context);
     extension = Injector.get(TypeScriptHero);
 
-    let serverModule = context.asAbsolutePath(join('server', 'TypeScriptHeroServer.js')),
+    let serverModule = require.resolve('typescript-hero-server'),
         debugOptions = { execArgv: ['--nolazy', '--debug=6004'] };
 
     let serverOptions: ServerOptions = {
@@ -48,15 +48,7 @@ export function activate(context: ExtensionContext): void {
     // client can be deactivated on extension deactivation
     context.subscriptions.push(client.start());
     client.onReady().then(() => {
-        setTimeout(() => {
-            client.sendNotification('foobar');
-        }, 1000);
-
-        setTimeout(() => {
-            client.sendRequest('barbaz', 'blublublub').then(result => {
-                console.log(result);
-            })
-        }, 5000);
+        
     });
 
 }

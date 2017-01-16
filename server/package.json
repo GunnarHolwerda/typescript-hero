@@ -3,18 +3,20 @@
   "version": "0.12.0",
   "author": "Christoph Bühler <christoph.buehler@bluewin.ch>",
   "license": "MIT",
+  "main": "TypeScriptHeroServer.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-eslint.git"
+    "url": "https://github.com/buehler/typescript-hero.git"
   },
   "bugs": {
-    "url": "https://github.com/Microsoft/vscode-eslint/issues"
+    "url": "https://github.com/buehler/typescript-hero/issues"
   },
   "engines": {
     "node": "*"
   },
   "dependencies": {
-    "rxjs": "^5.0.3",
+    "inversify": "^3.0.0",
+    "reflect-metadata": "^0.1.9",
     "typescript-hero-common": "../common",
     "vscode-languageserver": "^3.0.2-beta.3"
   },
