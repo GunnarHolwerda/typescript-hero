@@ -1,4 +1,3 @@
-import { LogLevel } from '../models';
 import { ResolverConfig, RestartDebuggerConfig } from './';
 
 /**
@@ -13,10 +12,10 @@ export interface ExtensionConfig {
      * The actual log level.
      * 
      * @readonly
-     * @type {LogLevel}
+     * @type {string}
      * @memberOf ExtensionConfig
      */
-    logLevel: LogLevel;
+    verbosity: string;
 
     /**
      * Configuration object for the resolver extension.
