@@ -1,7 +1,4 @@
-import { TsDeclaration } from './TsDeclaration';
-import { TsExport } from './TsExport';
-import { TsImport } from './TsImport';
-import { TsNode } from './TsNode';
+import { TsDeclaration, TsExport, TsImport, TsNode } from './';
 import { parse, ParsedPath } from 'path';
 import { workspace } from 'vscode';
 

@@ -1,3 +1,4 @@
+import { TshCommand } from '../';
 import { QuickPickItem } from 'vscode';
 
 /**

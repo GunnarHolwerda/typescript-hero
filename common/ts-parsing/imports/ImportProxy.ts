@@ -1,6 +1,5 @@
-import { TsDefaultImport, TsNamedImport } from './TsImport';
-import { TsImportOptions } from './TsImportOptions';
-import { TsResolveSpecifier } from './TsResolveSpecifier';
+import { TsResolveSpecifier } from '../';
+import { ImportOptions, TsDefaultImport, TsNamedImport } from './';
 
 /**
  * Proxy class that wraps a TsNamedImport or a TsDefaultImport. Is used by the DocumentController to
@@ -12,7 +11,7 @@ import { TsResolveSpecifier } from './TsResolveSpecifier';
  */
 export class ImportProxy extends TsNamedImport {
     public defaultPurposal: string;
-    public defaultAlias: string;
+    public defaultAlias: string | undefined;
 
     constructor(library: TsNamedImport | TsDefaultImport | string, start?: number, end?: number) {
         super(typeof library !== 'string' ? library.libraryName : library, start, end);
@@ -95,12 +94,12 @@ export class ImportProxy extends TsNamedImport {
      * specifier is used, a normal default import string is returned, otherwise a TsNamedImport with (or without)
      * the default import is returned.
      * 
-     * @param {TsImportOptions} options
+     * @param {ImportOptions} options
      * @returns {string}
      * 
      * @memberOf ImportProxy
      */
-    public toImport(options: TsImportOptions): string {
+    public toImport(options: ImportOptions): string {
         if (this.specifiers.length <= 0) {
             return new TsDefaultImport(this.libraryName, this.defaultAlias, this.start, this.end).toImport(options);
         }

@@ -1,7 +1,6 @@
-import { Clonable } from './Clonable';
-import { TsImportOptions } from './TsImportOptions';
-import { TsNode } from './TsNode';
-import { TsResolveSpecifier } from './TsResolveSpecifier';
+import { TsNode, TsResolveSpecifier } from '../';
+import { Clonable } from '../../';
+import { ImportOptions } from './';
 import { Position, Range, TextDocument } from 'vscode';
 
 /**
@@ -40,12 +39,12 @@ export abstract class TsImport extends TsNode implements Clonable {
      * The returned string can be multi-line.
      * 
      * @abstract
-     * @param {TsImportOptions} options - The options object that is delivered by the extensionconfig.
+     * @param {ImportOptions} options - The options object that is delivered by the extensionconfig.
      * @returns {string} - The stringified import.
      * 
      * @memberOf TsImport
      */
-    public abstract toImport(options: TsImportOptions): string;
+    public abstract toImport(options: ImportOptions): string;
 
     /**
      * Clone the current import object.
@@ -68,7 +67,7 @@ export abstract class TsImport extends TsNode implements Clonable {
  * @extends {TsImport}
  */
 export abstract class TsAliasedImport extends TsImport {
-    constructor(libraryName: string, public alias: string, start?: number, end?: number) {
+    constructor(libraryName: string, public alias?: string, start?: number, end?: number) {
         super(libraryName, start, end);
     }
 }
@@ -84,13 +83,13 @@ export class TsStringImport extends TsImport {
     /**
      * Generate TypeScript (import notation).
      * 
-     * @param {TsImportOptions}
+     * @param {ImportOptions}
      * @returns {string}
      * 
      * @memberOf TsStringImport
      */
-    public toImport({pathDelimiter, eol}: TsImportOptions): string {
-        return `import ${pathDelimiter}${this.libraryName}${pathDelimiter}${eol}\n`;
+    public toImport({stringQuoteStyle, eol}: ImportOptions): string {
+        return `import ${stringQuoteStyle}${this.libraryName}${stringQuoteStyle}${eol}\n`;
     }
 
     /**
@@ -120,18 +119,19 @@ export class TsNamedImport extends TsImport {
     /**
      * Generate TypeScript (import notation).
      * 
-     * @param {TsImportOptions} options
+     * @param {ImportOptions} options
      * @returns {string}
      * 
      * @memberOf TsNamedImport
      */
-    public toImport(options: TsImportOptions): string {
-        let {eol, pathDelimiter, spaceBraces, multiLineWrapThreshold} = options,
+    public toImport(options: ImportOptions): string {
+        let {eol, stringQuoteStyle, spaceBraces, multiLineWrapThreshold} = options,
             space = spaceBraces ? ' ' : '',
             specifiers = this.specifiers.sort(this.specifierSort).map(o => o.toImport()).join(', '),
             lib = this.libraryName;
 
-        let importString = `import {${space}${specifiers}${space}} from ${pathDelimiter}${lib}${pathDelimiter}${eol}\n`;
+        let importString =
+            `import {${space}${specifiers}${space}} from ${stringQuoteStyle}${lib}${stringQuoteStyle}${eol}\n`;
         if (importString.length > multiLineWrapThreshold) {
             return this.toMultiLineImport(options);
         }
@@ -154,16 +154,16 @@ export class TsNamedImport extends TsImport {
     /**
      * Converts the named import into a multiline import.
      * 
-     * @param {TsImportOptions} {pathDelimiter, tabSize}
+     * @param {ImportOptions} {stringQuoteStyle, tabSize}
      * @returns {string}
      * 
      * @memberOf TsNamedImport
      */
-    public toMultiLineImport({eol, pathDelimiter, tabSize}: TsImportOptions): string {
+    public toMultiLineImport({eol, stringQuoteStyle, tabSize}: ImportOptions): string {
         let spacings = Array(tabSize + 1).join(' ');
         return `import {
 ${this.specifiers.sort(this.specifierSort).map(o => `${spacings}${o.toImport()}`).join(',\n')}
-} from ${pathDelimiter}${this.libraryName}${pathDelimiter}${eol}\n`;
+} from ${stringQuoteStyle}${this.libraryName}${stringQuoteStyle}${eol}\n`;
     }
 
     /**
@@ -200,13 +200,13 @@ export class TsNamespaceImport extends TsAliasedImport {
     /**
      * Generate TypeScript (import notation).
      * 
-     * @param {TsImportOptions}
+     * @param {ImportOptions}
      * @returns {string}
      * 
      * @memberOf TsStringImport
      */
-    public toImport({eol, pathDelimiter}: TsImportOptions): string {
-        return `import * as ${this.alias} from ${pathDelimiter}${this.libraryName}${pathDelimiter}${eol}\n`;
+    public toImport({eol, stringQuoteStyle}: ImportOptions): string {
+        return `import * as ${this.alias} from ${stringQuoteStyle}${this.libraryName}${stringQuoteStyle}${eol}\n`;
     }
 
     /**
@@ -233,13 +233,13 @@ export class TsExternalModuleImport extends TsAliasedImport {
     /**
      * Generate TypeScript (import notation).
      * 
-     * @param {TsImportOptions}
+     * @param {ImportOptions}
      * @returns {string}
      * 
      * @memberOf TsStringImport
      */
-    public toImport({eol, pathDelimiter}: TsImportOptions): string {
-        return `import ${this.alias} = require(${pathDelimiter}${this.libraryName}${pathDelimiter})${eol}\n`;
+    public toImport({eol, stringQuoteStyle}: ImportOptions): string {
+        return `import ${this.alias} = require(${stringQuoteStyle}${this.libraryName}${stringQuoteStyle})${eol}\n`;
     }
 
     /**
@@ -266,13 +266,13 @@ export class TsDefaultImport extends TsAliasedImport {
     /**
      * Generate TypeScript (import notation).
      * 
-     * @param {TsImportOptions}
+     * @param {ImportOptions}
      * @returns {string}
      * 
      * @memberOf TsStringImport
      */
-    public toImport({eol, pathDelimiter}: TsImportOptions): string {
-        return `import ${this.alias} from ${pathDelimiter}${this.libraryName}${pathDelimiter}${eol}\n`;
+    public toImport({eol, stringQuoteStyle}: ImportOptions): string {
+        return `import ${this.alias} from ${stringQuoteStyle}${this.libraryName}${stringQuoteStyle}${eol}\n`;
     }
 
     /**

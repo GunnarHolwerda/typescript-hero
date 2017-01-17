@@ -1,4 +1,4 @@
-import { Clonable } from './Clonable';
+import { Clonable } from '../';
 
 /**
  * Resolve specifier that is contained in named imports and exports.

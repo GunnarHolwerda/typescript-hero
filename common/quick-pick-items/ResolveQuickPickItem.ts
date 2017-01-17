@@ -1,3 +1,4 @@
+import { DeclarationInfo } from '../';
 import { QuickPickItem } from 'vscode';
 
 /**

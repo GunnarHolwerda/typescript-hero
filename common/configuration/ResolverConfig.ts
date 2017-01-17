@@ -1,4 +1,4 @@
-import { ImportLocation, ImportOptions } from '../models';
+import { ImportLocation, ImportOptions } from '../';
 
 /**
  * Configuration interface for the resolver extension.

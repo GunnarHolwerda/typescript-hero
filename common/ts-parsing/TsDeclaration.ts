@@ -1,6 +1,5 @@
-import { ToTypescriptOptions } from './GeneratorOptions';
-import { TsNode } from './TsNode';
-import { TsResource } from './TsResource';
+import { ToTypescriptOptions } from '../';
+import { TsNode, TsResource } from './';
 import { CompletionItemKind } from 'vscode';
 
 /**
@@ -237,7 +236,7 @@ export class MethodDeclaration extends TsTypedExportableCallableDeclaration {
         end?: number,
         public isAbstract: boolean = false
     ) {
-        super(name, type, start, end, false);
+        super(name, type!, start!, end!, false);
     }
 
     /**
@@ -250,7 +249,7 @@ export class MethodDeclaration extends TsTypedExportableCallableDeclaration {
      */
     public toTypescript({tabSize}: ToTypescriptOptions): string {
         let intend = Array(tabSize + 1).join(' ');
-        return `${intend}${getVisibilityText(this.visibility)} ${this.name}(` +
+        return `${intend}${getVisibilityText(this.visibility!)} ${this.name}(` +
             `${this.parameters.map(o => o.toTypescript({ tabSize })).join(', ')})` +
             `${this.type ? `: ${this.type}` : ''} {
 ${intend}${intend}throw new Error('Not implemented yet.');
@@ -285,7 +284,7 @@ export class ConstructorDeclaration extends TsExportableCallableDeclaration {
     }
 
     constructor(start?: number, end?: number) {
-        super('constructor', start, end, false);
+        super('constructor', start!, end!, false);
     }
 }
 
@@ -342,7 +341,7 @@ export class VariableDeclaration extends TsTypedExportableDeclaration {
         start?: number,
         end?: number
     ) {
-        super(name, type, start, end, isExported);
+        super(name, type!, start!, end!, isExported);
     }
 }
 
@@ -382,14 +381,14 @@ export class ParameterDeclaration extends TsTypedDeclaration {
  * @extends {TsExportableDeclaration}
  */
 export class DefaultDeclaration extends TsExportableDeclaration {
-    private exported: TsDeclaration;
+    private exported: TsDeclaration | undefined;
 
     public get exportedDeclaration(): TsDeclaration {
         if (!this.exported) {
             this.exported = this.resource.declarations.find(o => o.name === this.name);
         }
 
-        return this.exported;
+        return this.exported!;
     }
 
     public get itemKind(): CompletionItemKind {
