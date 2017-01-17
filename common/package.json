@@ -24,6 +24,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^7.0.0",
     "del-cli": "^0.2.1",
     "tslint-jsdoc-rules": "^0.1.2",
     "typescript": "^2.1.4"

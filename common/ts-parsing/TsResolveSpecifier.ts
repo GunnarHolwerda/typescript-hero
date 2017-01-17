@@ -1,4 +1,5 @@
 import { Clonable } from './Clonable';
+
 /**
  * Resolve specifier that is contained in named imports and exports.
  * Contains the specifier of the symbol and a possible alias.
