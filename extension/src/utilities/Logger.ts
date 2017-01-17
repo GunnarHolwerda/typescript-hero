@@ -35,7 +35,7 @@ export class Logger {
 
     constructor(context: ExtensionContext, private config: ExtensionConfig, private prefix?: string) {
         if (!Logger.channel) {
-            Logger.channel = window.createOutputChannel('Typescript Hero Extension');
+            Logger.channel = window.createOutputChannel('TypeScript Hero Extension');
             context.subscriptions.push(Logger.channel);
         }
     }

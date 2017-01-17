@@ -31,7 +31,6 @@ export class TypeScriptHero implements Disposable {
     /**
      * Disposes TypeScript Hero.
      * 
-     * 
      * @memberOf TypeScriptHero
      */
     public dispose(): void {
