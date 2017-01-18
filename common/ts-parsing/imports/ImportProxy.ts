@@ -1,4 +1,4 @@
-import { TsResolveSpecifier } from '../';
+import { TsResolveSpecifier } from '../TsResolveSpecifier';
 import { ImportOptions, TsDefaultImport, TsNamedImport } from './';
 
 /**

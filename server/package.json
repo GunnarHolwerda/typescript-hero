@@ -12,12 +12,15 @@
     "url": "https://github.com/buehler/typescript-hero/issues"
   },
   "engines": {
-    "node": "*"
+    "node": "*",
+    "npm": "*",
+    "vscode": "^1.6.0"
   },
   "dependencies": {
     "inversify": "^3.0.0",
     "reflect-metadata": "^0.1.9",
     "typescript-hero-common": "../common",
+    "vscode": "^1.0.3",
     "vscode-languageserver": "^3.0.2-beta.3"
   },
   "devDependencies": {
@@ -27,6 +30,7 @@
     "typescript": "^2.1.4"
   },
   "scripts": {
+    "postinstall": "node ./node_modules/vscode/bin/install",
     "predevelop": "del-cli \"./**/*.js\" \"./**/*.js.map\" \"./**/*.d.ts\" \"!./node_modules/**/*\"",
     "develop": "tsc -w --sourceMap -p ./"
   }

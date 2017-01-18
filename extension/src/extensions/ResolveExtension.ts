@@ -20,6 +20,7 @@ import {
     window,
     workspace
 } from 'vscode';
+import { LanguageClient } from 'vscode-languageclient';
 
 type ImportInformation = {};
 
@@ -73,7 +74,8 @@ export class ResolveExtension extends BaseExtension {
         private parser: TsResourceParser,
         private config: ExtensionConfig,
         private index: ResolveIndex,
-        private completionProvider: ResolveCompletionItemProvider
+        private completionProvider: ResolveCompletionItemProvider,
+        private client: LanguageClient
     ) {
         super();
 

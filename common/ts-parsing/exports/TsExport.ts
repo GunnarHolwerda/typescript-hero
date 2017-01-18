@@ -1,4 +1,8 @@
-import { TsExportableDeclaration, TsModule, TsNamespace, TsNode, TsResolveSpecifier, TsResource } from '../';
+import { TsExportableDeclaration } from '../TsDeclaration';
+import { TsNode } from '../TsNode';
+import { TsResolveSpecifier } from '../TsResolveSpecifier';
+import { TsModule, TsNamespace, TsResource } from '../TsResource';
+
 
 /**
  * Base export class.

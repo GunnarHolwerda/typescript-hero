@@ -1,7 +1,7 @@
 import { Initializable } from '../Initializable';
+import { SpecificLogger } from './SpecificLogger';
 import { injectable } from 'inversify';
-import { ExtensionConfig } from 'typescript-hero-common/configuration';
-import { LogLevel } from 'typescript-hero-common/models';
+import { ExtensionConfig, LogLevel } from 'typescript-hero-common';
 import * as util from 'util';
 import { IConnection, InitializeParams, MessageType } from 'vscode-languageserver';
 
@@ -49,12 +49,12 @@ export class Logger implements Initializable {
      * @memberOf Logger
      */
     public initialize(connection: IConnection, params: InitializeParams): void {
+        this.info('ResolveIndex: initialize.');
         connection.onDidChangeConfiguration(changed => {
             this.configuration = changed.settings.typescriptHero;
             this.info('Logger: configuration changed.');
             this.trySendBuffer();
         });
-
         this.connection = connection;
     }
 
@@ -66,6 +66,22 @@ export class Logger implements Initializable {
     public initialized(): void {
         this.info('Logger: initialized.');
         this.trySendBuffer();
+    }
+
+    /**
+     * TODO
+     * 
+     * @param {string} prefix
+     * @returns {SpecificLogger}
+     * 
+     * @memberOf Logger
+     */
+    public createSpecificLogger(prefix: string): SpecificLogger {
+        return {
+            info: (message: string, data?: any) => this.info(`${prefix}: ${message}`, data),
+            warning: (message: string, data?: any) => this.info(`${prefix}: ${message}`, data),
+            error: (message: string, data?: any) => this.info(`${prefix}: ${message}`, data)
+        };
     }
 
     /**

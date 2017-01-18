@@ -1,9 +1,15 @@
 import { DeclarationInfo, ResourceIndex } from './';
 import { CancellationToken } from 'vscode';
 
+/**
+ * TODO
+ * 
+ * @export
+ * @interface ResolveIndex
+ */
 export interface ResolveIndex {
     readonly indexReady: boolean;
-    readonly index: ResourceIndex;
+    readonly index: ResourceIndex | undefined;
     readonly declarationInfos: DeclarationInfo[];
 
     /**

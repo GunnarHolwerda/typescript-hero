@@ -1,5 +1,6 @@
-import { ToTypescriptOptions } from '../';
-import { TsNode, TsResource } from './';
+import { ToTypescriptOptions } from '../ts-generation';
+import { TsNode } from './TsNode';
+import { TsResource } from './TsResource';
 import { CompletionItemKind } from 'vscode';
 
 /**

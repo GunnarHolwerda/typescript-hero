@@ -1,29 +1,24 @@
-import { ExtensionConfig } from '../ExtensionConfig';
+import { SpecificLogger } from '../utilities/SpecificLogger';
+import { Initializable } from '../Initializable';
+import { Logger } from '../utilities/Logger';
+import { injectable } from 'inversify';
 import {
+    DeclarationInfo,
+    ExtensionConfig,
     ModuleDeclaration,
-    TsDeclaration,
+    ResolveIndex,
+    ResourceIndex,
+    ServerBuildIndexForFiles,
+    TsAssignedExport,
     TsExportableDeclaration,
+    TsFile,
+    TsNamedFromExport,
+    TsNamedResource,
+    TsResource,
     TsTypedExportableDeclaration
-} from '../models/TsDeclaration';
-import { TsAllFromExport, TsAssignedExport, TsFromExport, TsNamedFromExport } from '../models/TsExport';
-import { TsFile, TsNamedResource, TsResource } from '../models/TsResource';
-import { TsResourceParser } from '../parser/TsResourceParser';
-import { Logger, LoggerFactory } from '../utilities/Logger';
-import { existsSync } from 'fs';
-import { inject, injectable } from 'inversify';
-import { join, normalize, resolve } from 'path';
-import { CancellationToken, CancellationTokenSource, Uri, workspace } from 'vscode';
-
-/**
- * Type that defines information about a declaration.
- * Contains the declaration and the origin of the declaration.
- */
-export type DeclarationInfo = { declaration: TsDeclaration, from: string };
-
-/**
- * Type for the reverse index of all declarations
- */
-export type ResourceIndex = { [declaration: string]: DeclarationInfo[] };
+} from 'typescript-hero-common';
+import { CancellationToken, CancellationTokenSource, Uri } from 'vscode';
+import { IConnection, InitializeParams } from 'vscode-languageserver';
 
 type Resources = { [name: string]: TsResource };
 
@@ -44,30 +39,20 @@ function getNodeLibraryName(path: string): string {
 }
 
 /**
- * Global index of typescript declarations. Contains declarations and origins.
- * Provides reverse index for search and declaration info for imports.
+ * TODO
  * 
  * @export
  * @class ResolveIndex
+ * @implements {Initializable}
  */
 @injectable()
-export class ResolveIndex {
-    private logger: Logger;
-    private cancelToken: CancellationTokenSource;
+export class ServerResolveIndex implements Initializable, ResolveIndex {
+    private cancelToken: CancellationTokenSource | undefined;
+    private config: ExtensionConfig;
+    private logger: SpecificLogger;
 
-    private parsedResources: Resources = Object.create(null);
-    private _index: ResourceIndex;
-
-    /**
-     * Indicator if the first index was loaded and calculated or not.
-     * 
-     * @readonly
-     * @type {boolean}
-     * @memberOf ResolveIndex
-     */
-    public get indexReady(): boolean {
-        return !!this._index;
-    }
+    private parsedResources: Resources | undefined = Object.create(null);
+    private _index: ResourceIndex | undefined;
 
     /**
      * Reverse index of the declarations.
@@ -76,7 +61,7 @@ export class ResolveIndex {
      * @type {ResourceIndex}
      * @memberOf ResolveIndex
      */
-    public get index(): ResourceIndex {
+    public get index(): ResourceIndex | undefined {
         return this._index;
     }
 
@@ -90,17 +75,49 @@ export class ResolveIndex {
      */
     public get declarationInfos(): DeclarationInfo[] {
         return Object
-            .keys(this.index)
+            .keys(this.index || {})
             .sort()
-            .reduce((all, key) => all.concat(this.index[key]), []);
+            .reduce((all, key) => all.concat(this.index![key]), <DeclarationInfo[]>[]);
     }
 
-    constructor(
-        @inject('LoggerFactory') loggerFactory: LoggerFactory,
-        private parser: TsResourceParser,
-        private config: ExtensionConfig
-    ) {
-        this.logger = loggerFactory('ResolveIndex');
+    constructor(logger: Logger) {
+        this.logger = logger.createSpecificLogger('ServerResolveIndex');
+    }
+
+    /**
+     * TODO
+     * 
+     * @param {IConnection} connection
+     * @param {InitializeParams} params
+     * 
+     * @memberOf ResolveIndex
+     */
+    public initialize(connection: IConnection, params: InitializeParams): void {
+        this.logger.info('initialize.');
+
+        connection.onDidChangeConfiguration(changed => this.config = changed.settings.typescriptHero);
+
+        connection.onNotification(ServerBuildIndexForFiles.method, (fileList: string[]) => this.buildIndex(fileList));
+    }
+
+    /**
+     * TODO
+     * 
+     * @memberOf ResolveIndex
+     */
+    public initialized(): void {
+        this.logger.info('initialized.');
+    }
+
+    /**
+     * Indicator if the first index was loaded and calculated or not.
+     * 
+     * @readonly
+     * @type {boolean}
+     * @memberOf ResolveIndex
+     */
+    public get indexReady(): boolean {
+        return !!this._index;
     }
 
     /**
@@ -113,9 +130,9 @@ export class ResolveIndex {
      * 
      * @memberOf ResolveIndex
      */
-    public async buildIndex(cancellationToken?: CancellationToken): Promise<boolean> {
+    public async buildIndex(filePathes: string[], cancellationToken?: CancellationToken): Promise<boolean> {
         if (this.cancelToken) {
-            this.logger.info('Refresh already running, canceling first.');
+            this.logger.info('Refresh already running, cancelling first.');
             this.cancelRefresh();
         }
 
@@ -123,24 +140,22 @@ export class ResolveIndex {
         this.cancelToken = new CancellationTokenSource();
 
         try {
-            let files = await this.findFiles(cancellationToken);
-
             if (cancellationToken && cancellationToken.onCancellationRequested) {
                 this.cancelRequested();
                 return true;
             }
 
-            this.logger.info(`Finding finished. Found ${files.length} files.`);
+            this.logger.info(`Got ${filePathes.length} filepathes.`);
 
-            let parsed = await this.parser.parseFiles(files);
+            // let parsed = await this.parser.parseFiles(files);
 
-            if (cancellationToken && cancellationToken.onCancellationRequested) {
-                this.cancelRequested();
-                return true;
-            }
+            // if (cancellationToken && cancellationToken.onCancellationRequested) {
+            //     this.cancelRequested();
+            //     return true;
+            // }
 
-            this.parsedResources = await this.parseResources(parsed, cancellationToken);
-            this._index = await this.createIndex(this.parsedResources, cancellationToken);
+            // this.parsedResources = await this.parseResources(parsed, cancellationToken);
+            // this._index = await this.createIndex(this.parsedResources, cancellationToken);
             return true;
         } catch (e) {
             this.logger.error('Catched an error during buildIndex()', e);
@@ -148,7 +163,7 @@ export class ResolveIndex {
         } finally {
             if (this.cancelToken) {
                 this.cancelToken.dispose();
-                this.cancelToken = null;
+                this.cancelToken = undefined;
             }
         }
     }
@@ -164,21 +179,22 @@ export class ResolveIndex {
      * @memberOf ResolveIndex
      */
     public async rebuildForFile(filePath: string): Promise<boolean> {
-        let rebuildResource = '/' + workspace.asRelativePath(filePath).replace(/[.]tsx?/g, ''),
-            rebuildFiles = [<Uri>{ fsPath: filePath }, ...this.getExportedResources(rebuildResource)];
+        // let rebuildResource = '/' + workspace.asRelativePath(filePath).replace(/[.]tsx?/g, ''),
+        //     rebuildFiles = [<Uri>{ fsPath: filePath }, ...this.getExportedResources(rebuildResource)];
 
-        try {
-            let resources = await this.parseResources(await this.parser.parseFiles(rebuildFiles));
+        // try {
+        //     let resources = await this.parseResources(await this.parser.parseFiles(rebuildFiles));
 
-            for (let key of Object.keys(resources)) {
-                this.parsedResources[key] = resources[key];
-            }
-            this._index = await this.createIndex(this.parsedResources);
-            return true;
-        } catch (e) {
-            this.logger.error('Catched an error during rebuildForFile()', e);
-            return false;
-        }
+        //     for (let key of Object.keys(resources)) {
+        //         this.parsedResources[key] = resources[key];
+        //     }
+        //     this._index = await this.createIndex(this.parsedResources);
+        //     return true;
+        // } catch (e) {
+        //     this.logger.error('Catched an error during rebuildForFile()', e);
+        //     return false;
+        // }
+        return true;
     }
 
     /**
@@ -191,22 +207,23 @@ export class ResolveIndex {
      * @memberOf ResolveIndex
      */
     public async removeForFile(filePath: string): Promise<boolean> {
-        let removeResource = '/' + workspace.asRelativePath(filePath).replace(/[.]tsx?/g, ''),
-            rebuildFiles = this.getExportedResources(removeResource);
+        // let removeResource = '/' + workspace.asRelativePath(filePath).replace(/[.]tsx?/g, ''),
+        //     rebuildFiles = this.getExportedResources(removeResource);
 
-        try {
-            let resources = await this.parseResources(await this.parser.parseFiles(rebuildFiles));
+        // try {
+        //     let resources = await this.parseResources(await this.parser.parseFiles(rebuildFiles));
 
-            delete this.parsedResources[removeResource];
-            for (let key of Object.keys(resources)) {
-                this.parsedResources[key] = resources[key];
-            }
-            this._index = await this.createIndex(this.parsedResources);
-            return true;
-        } catch (e) {
-            this.logger.error('Catched an error during removeForFile()', e);
-            return false;
-        }
+        //     delete this.parsedResources[removeResource];
+        //     for (let key of Object.keys(resources)) {
+        //         this.parsedResources[key] = resources[key];
+        //     }
+        //     this._index = await this.createIndex(this.parsedResources);
+        //     return true;
+        // } catch (e) {
+        //     this.logger.error('Catched an error during removeForFile()', e);
+        //     return false;
+        // }
+        return true;
     }
 
     /**
@@ -219,7 +236,7 @@ export class ResolveIndex {
         if (this.cancelToken) {
             this.logger.info('Canceling refresh.');
             this.cancelToken.dispose();
-            this.cancelToken = null;
+            this.cancelToken = undefined;
         }
     }
 
@@ -229,81 +246,8 @@ export class ResolveIndex {
      * @memberOf ResolveIndex
      */
     public reset(): void {
-        this.parsedResources = null;
-        this._index = null;
-    }
-
-    /**
-     * Searches through all workspace files to return those, that need to be indexed.
-     * The following search patterns apply:
-     * - All *.ts and *.tsx of the actual workspace
-     * - All *.d.ts files that live in a linked node_module folder (if there is a package.json)
-     * - All *.d.ts files that are located in a "typings" folder
-     * 
-     * @private
-     * @param {CancellationToken} cancellationToken
-     * @returns {Promise<Uri[]>}
-     * 
-     * @memberOf ResolveIndex
-     */
-    private async findFiles(cancellationToken: CancellationToken): Promise<Uri[]> {
-        let searches: PromiseLike<Uri[]>[] = [
-            workspace.findFiles(
-                '{**/*.ts,**/*.tsx}',
-                '{**/node_modules/**,**/typings/**}',
-                undefined,
-                cancellationToken
-            )
-        ];
-
-        let globs = [],
-            ignores = ['**/typings/**'];
-
-        if (workspace.rootPath && existsSync(join(workspace.rootPath, 'package.json'))) {
-            let packageJson = require(join(workspace.rootPath, 'package.json'));
-            if (packageJson['dependencies']) {
-                globs = globs.concat(
-                    Object.keys(packageJson['dependencies']).map(o => `**/node_modules/${o}/**/*.d.ts`)
-                );
-                ignores = ignores.concat(
-                    Object.keys(packageJson['dependencies']).map(o => `**/node_modules/${o}/node_modules/**`)
-                );
-            }
-            if (packageJson['devDependencies']) {
-                globs = globs.concat(
-                    Object.keys(packageJson['devDependencies']).map(o => `**/node_modules/${o}/**/*.d.ts`)
-                );
-                ignores = ignores.concat(
-                    Object.keys(packageJson['devDependencies']).map(o => `**/node_modules/${o}/node_modules/**`)
-                );
-            }
-        } else {
-            globs.push('**/node_modules/**/*.d.ts');
-        }
-        searches.push(
-            workspace.findFiles(`{${globs.join(',')}}`, `{${ignores.join(',')}}`, undefined, cancellationToken)
-        );
-
-        searches.push(
-            workspace.findFiles('**/typings/**/*.d.ts', '**/node_modules/**', undefined, cancellationToken)
-        );
-
-        let uris = await Promise.all(searches);
-        if (cancellationToken && cancellationToken.onCancellationRequested) {
-            this.cancelRequested();
-            return;
-        }
-        let excludePatterns = this.config.resolver.ignorePatterns;
-        uris = uris.map((o, idx) => idx === 0 ?
-            o.filter(
-                f => f.fsPath
-                    .replace(workspace.rootPath, '')
-                    .split(/\\|\//)
-                    .every(p => excludePatterns.indexOf(p) < 0)) :
-            o
-        );
-        this.logger.info(`Found ${uris.reduce((sum, cur) => sum + cur.length, 0)} files.`);
-        return uris.reduce((all, cur) => all.concat(cur), []);
+        this.parsedResources = undefined;
+        this._index = undefined;
     }
 
     /**
@@ -317,7 +261,10 @@ export class ResolveIndex {
      * 
      * @memberOf ResolveIndex
      */
-    private async parseResources(files: TsFile[] = [], cancellationToken?: CancellationToken): Promise<Resources> {
+    private async parseResources(
+        files: TsFile[] = [],
+        cancellationToken?: CancellationToken
+    ): Promise<Resources | undefined> {
         let parsedResources: Resources = {};
 
         for (let file of files) {
@@ -364,7 +311,10 @@ export class ResolveIndex {
      * 
      * @memberOf ResolveIndex
      */
-    private async createIndex(resources: Resources, cancellationToken?: CancellationToken): Promise<ResourceIndex> {
+    private async createIndex(
+        resources: Resources,
+        cancellationToken?: CancellationToken
+    ): Promise<ResourceIndex | undefined> {
         if (cancellationToken && cancellationToken.onCancellationRequested) {
             this.cancelRequested();
             return;
@@ -419,50 +369,50 @@ export class ResolveIndex {
         resource: TsResource,
         processedResources: TsResource[] = []
     ): void {
-        if (processedResources.indexOf(resource) >= 0) {
-            return;
-        }
-        processedResources.push(resource);
+        // if (processedResources.indexOf(resource) >= 0) {
+        //     return;
+        // }
+        // processedResources.push(resource);
 
-        for (let ex of resource.exports) {
-            if (resource instanceof TsFile && ex instanceof TsFromExport) {
-                if (!ex.from) {
-                    return;
-                }
+        // for (let ex of resource.exports) {
+        //     if (resource instanceof TsFile && ex instanceof TsFromExport) {
+        //         if (!ex.from) {
+        //             return;
+        //         }
 
-                let sourceLib = resolve(resource.parsedPath.dir, ex.from);
-                if (sourceLib.indexOf('node_modules') > -1) {
-                    sourceLib = getNodeLibraryName(sourceLib);
-                } else {
-                    sourceLib = '/' + workspace.asRelativePath(sourceLib).replace(/([.]d)?[.]tsx?/g, '');
-                }
+        //         let sourceLib = resolve(resource.parsedPath.dir, ex.from);
+        //         if (sourceLib.indexOf('node_modules') > -1) {
+        //             sourceLib = getNodeLibraryName(sourceLib);
+        //         } else {
+        //             sourceLib = '/' + workspace.asRelativePath(sourceLib).replace(/([.]d)?[.]tsx?/g, '');
+        //         }
 
-                if (!parsedResources[sourceLib]) {
-                    return;
-                }
+        //         if (!parsedResources[sourceLib]) {
+        //             return;
+        //         }
 
-                let exportedLib = parsedResources[sourceLib];
-                this.processResourceExports(parsedResources, exportedLib, processedResources);
+        //         let exportedLib = parsedResources[sourceLib];
+        //         this.processResourceExports(parsedResources, exportedLib, processedResources);
 
-                if (ex instanceof TsAllFromExport) {
-                    this.processAllFromExport(parsedResources, resource, exportedLib);
-                } else if (ex instanceof TsNamedFromExport) {
-                    this.processNamedFromExport(parsedResources, ex, resource, exportedLib);
-                }
-            } else {
-                if (ex instanceof TsAssignedExport) {
-                    for (let lib of ex.exported.filter(
-                        o => !(o instanceof TsExportableDeclaration) && !(o instanceof TsTypedExportableDeclaration))
-                    ) {
-                        this.processResourceExports(parsedResources, lib as TsResource, processedResources);
-                    }
-                    this.processAssignedExport(parsedResources, ex, resource);
-                } else if (ex instanceof TsNamedFromExport && ex.from && parsedResources[ex.from]) {
-                    this.processResourceExports(parsedResources, parsedResources[ex.from], processedResources);
-                    this.processNamedFromExport(parsedResources, ex, resource, parsedResources[ex.from]);
-                }
-            }
-        }
+        //         if (ex instanceof TsAllFromExport) {
+        //             this.processAllFromExport(parsedResources, resource, exportedLib);
+        //         } else if (ex instanceof TsNamedFromExport) {
+        //             this.processNamedFromExport(parsedResources, ex, resource, exportedLib);
+        //         }
+        //     } else {
+        //         if (ex instanceof TsAssignedExport) {
+        //             for (let lib of ex.exported.filter(
+        //                 o => !(o instanceof TsExportableDeclaration) && !(o instanceof TsTypedExportableDeclaration))
+        //             ) {
+        //                 this.processResourceExports(parsedResources, lib as TsResource, processedResources);
+        //             }
+        //             this.processAssignedExport(parsedResources, ex, resource);
+        //         } else if (ex instanceof TsNamedFromExport && ex.from && parsedResources[ex.from]) {
+        //             this.processResourceExports(parsedResources, parsedResources[ex.from], processedResources);
+        //             this.processNamedFromExport(parsedResources, ex, resource, parsedResources[ex.from]);
+        //         }
+        //     }
+        // }
     }
 
     /**
@@ -554,12 +504,15 @@ export class ResolveIndex {
      * @memberOf ResolveIndex
      */
     private getExportedResources(resourceToCheck: string): Uri[] {
-        let resources = [];
+        if (!this.parsedResources) {
+            return [];
+        }
+        let resources: Uri[] = [];
         Object
             .keys(this.parsedResources)
             .filter(o => o.startsWith('/'))
             .forEach(key => {
-                let resource = this.parsedResources[key] as TsFile;
+                let resource = this.parsedResources![key] as TsFile;
                 if (this.doesExportResource(resource, resourceToCheck)) {
                     resources.push(<Uri>{ fsPath: resource.filePath });
                 }
@@ -581,15 +534,15 @@ export class ResolveIndex {
     private doesExportResource(resource: TsFile, resourcePath: string): boolean {
         let exportsResource = false;
 
-        for (let ex of resource.exports) {
-            if (exportsResource) {
-                break;
-            }
-            if (ex instanceof TsAllFromExport || ex instanceof TsNamedFromExport) {
-                let exported = '/' + workspace.asRelativePath(normalize(join(resource.parsedPath.dir, ex.from)));
-                exportsResource = exported === resourcePath;
-            }
-        }
+        // for (let ex of resource.exports) {
+        //     if (exportsResource) {
+        //         break;
+        //     }
+        //     if (ex instanceof TsAllFromExport || ex instanceof TsNamedFromExport) {
+        //         let exported = '/' + workspace.asRelativePath(normalize(join(resource.parsedPath.dir, ex.from)));
+        //         exportsResource = exported === resourcePath;
+        //     }
+        // }
 
         return exportsResource;
     }

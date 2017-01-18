@@ -1,5 +1,6 @@
-import { TsNode, TsResolveSpecifier } from '../';
-import { Clonable } from '../../';
+import { Clonable } from '../../utilities';
+import { TsNode } from '../TsNode';
+import { TsResolveSpecifier } from '../TsResolveSpecifier';
 import { ImportOptions } from './';
 import { Position, Range, TextDocument } from 'vscode';
 
