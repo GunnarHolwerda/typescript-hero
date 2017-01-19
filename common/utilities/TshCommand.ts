@@ -1,5 +1,3 @@
-import { InputBoxOptions } from 'vscode';
-
 /**
  * Typescript hero internal command that is executed from the guiprovider.
  * 
@@ -7,5 +5,5 @@ import { InputBoxOptions } from 'vscode';
  * @class TshCommand
  */
 export class TshCommand {
-    constructor(public action: (...args: any[]) => void, public args?: InputBoxOptions[]) { }
+    constructor(public action: (...args: any[]) => void) { }
 }

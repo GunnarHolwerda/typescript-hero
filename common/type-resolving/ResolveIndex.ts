@@ -1,5 +1,4 @@
 import { DeclarationInfo, ResourceIndex } from './';
-import { CancellationToken } from 'vscode';
 
 /**
  * TODO
@@ -14,15 +13,13 @@ export interface ResolveIndex {
 
     /**
      * Tells the index to build a new index.
-     * Can be canceled with a cancellationToken.
      * 
      * @param {string[]} filePathes
-     * @param {CancellationToken} [cancellationToken]
      * @returns {Promise<boolean>} true when the index was successful or sucessfully canceled
      * 
      * @memberOf ResolveIndex
      */
-    buildIndex(filePathes: string[], cancellationToken?: CancellationToken): Promise<boolean>;
+    buildIndex(filePathes: string[]): Promise<boolean>;
 
     /**
      * Rebuild the cache for one specific file. This can happen if a file is changed (saved)
@@ -46,14 +43,6 @@ export interface ResolveIndex {
      * @memberOf ResolveIndex
      */
     removeForFile(filePath: string): Promise<boolean>;
-
-    /**
-     * Possibility to cancel a scheduled index refresh. Does dispose the cancellationToken
-     * to indicate a cancellation.
-     * 
-     * @memberOf ResolveIndex
-     */
-    cancelRefresh(): void;
 
     /**
      * Resets the whole index. Does delete everything. Period.

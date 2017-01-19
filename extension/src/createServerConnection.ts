@@ -29,6 +29,7 @@ export async function createServerConnection(context: ExtensionContext): Promise
     );
 
     context.subscriptions.push(client.start());
+    debugger;
     await client.onReady();
     return client;
 }

@@ -1,4 +1,4 @@
-import { Position, Range, TextDocument } from 'vscode';
+import { Position, Range, TextDocument } from 'vscode-languageserver-types';
 
 /**
  * Base class for all nodes / declarations in the extension.
@@ -21,7 +21,7 @@ export abstract class TsNode {
      */
     public getRange(document: TextDocument): Range {
         return this.start !== undefined && this.end !== undefined ?
-            new Range(document.positionAt(this.start), document.positionAt(this.end)) :
-            new Range(new Position(0, 0), new Position(0, 0));
+            Range.create(document.positionAt(this.start), document.positionAt(this.end)) :
+            Range.create(Position.create(0, 0), Position.create(0, 0));
     }
 }

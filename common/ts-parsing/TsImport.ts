@@ -1,8 +1,8 @@
-import { Clonable } from '../../utilities';
-import { TsNode } from '../TsNode';
-import { TsResolveSpecifier } from '../TsResolveSpecifier';
-import { ImportOptions } from './';
-import { Position, Range, TextDocument } from 'vscode';
+import { Clonable } from '../utilities';
+import { TsNode } from './TsNode';
+import { TsResolveSpecifier } from './TsResolveSpecifier';
+import { ImportOptions } from './ImportOptions';
+import { Position, Range, TextDocument } from 'vscode-languageserver-types';
 
 /**
  * Basic import class. Defines an import in a document.
@@ -28,11 +28,11 @@ export abstract class TsImport extends TsNode implements Clonable {
      */
     public getRange(document: TextDocument): Range {
         return this.start !== undefined && this.end !== undefined ?
-            new Range(
-                document.lineAt(document.positionAt(this.start).line).rangeIncludingLineBreak.start,
-                document.lineAt(document.positionAt(this.end).line).rangeIncludingLineBreak.end
+            Range.create(
+                Position.create(document.positionAt(this.start).line, 0),
+                Position.create(document.positionAt(this.end + 1).line, 0)
             ) :
-            new Range(new Position(0, 0), new Position(0, 0));
+            Range.create(Position.create(0, 0), Position.create(0, 0));
     }
 
     /**

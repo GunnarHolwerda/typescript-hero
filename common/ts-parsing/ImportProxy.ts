@@ -1,5 +1,6 @@
-import { TsResolveSpecifier } from '../TsResolveSpecifier';
-import { ImportOptions, TsDefaultImport, TsNamedImport } from './';
+import { ImportOptions } from './ImportOptions';
+import { TsDefaultImport, TsNamedImport } from './TsImport';
+import { TsResolveSpecifier } from './TsResolveSpecifier';
 
 /**
  * Proxy class that wraps a TsNamedImport or a TsDefaultImport. Is used by the DocumentController to

@@ -1,5 +1,5 @@
 import { DeclarationInfo } from '../';
-import { QuickPickItem } from 'vscode';
+import { PickableItem } from './PickableItem';
 
 /**
  * Quickpick item that contains a symbol resolve information (Declarationinfo)
@@ -10,7 +10,7 @@ import { QuickPickItem } from 'vscode';
  * @class ResolveQuickPickItem
  * @implements {QuickPickItem}
  */
-export class ResolveQuickPickItem implements QuickPickItem {
+export class ResolveQuickPickItem implements PickableItem {
     public label: string;
     public description: string;
 

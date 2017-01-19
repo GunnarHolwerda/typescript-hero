@@ -1,9 +1,8 @@
-import { TsExport } from './exports';
-import { TsImport } from './imports/TsImport';
 import { TsDeclaration } from './TsDeclaration';
+import { TsExport } from './TsExport';
+import { TsImport } from './TsImport';
 import { TsNode } from './TsNode';
-import { parse, ParsedPath } from 'path';
-import { workspace } from 'vscode';
+import { parse, ParsedPath, relative } from 'path';
 
 /**
  * Base class for resources. All resources share the same properties.
@@ -44,11 +43,12 @@ export abstract class TsResource extends TsNode {
      * This can be a filepath relative to the workspace or a libraryname.
      * 
      * @abstract
+     * @param {string} [rootPath]
      * @returns {string}
      * 
      * @memberOf TsResource
      */
-    public abstract getIdentifier(): string;
+    public abstract getIdentifier(rootPath?: string): string;
 }
 
 /**
@@ -92,8 +92,8 @@ export class TsFile extends TsResource {
      * 
      * @memberOf TsFile
      */
-    public getIdentifier(): string {
-        return '/' + workspace.asRelativePath(this.filePath).replace(/([.]d)?[.]tsx?/g, '');
+    public getIdentifier(rootPath: string): string {
+        return '/' + relative(rootPath, this.filePath).replace(/([.]d)?[.]tsx?/g, '');
     }
 }
 

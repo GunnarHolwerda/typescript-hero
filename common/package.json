@@ -9,7 +9,6 @@
     "npm": "*"
   },
   "scripts": {
-    "postinstall": "node ./node_modules/vscode/bin/install",
     "predevelop": "del-cli \"./**/*.js\" \"./**/*.js.map\" \"./**/*.d.ts\" \"!./node_modules/**/*\"",
     "develop": "tsc --sourceMap --watch -p ./tsconfig.json",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -31,6 +30,6 @@
   },
   "dependencies": {
     "rxjs": "^5.0.3",
-    "vscode": "^1.0.3"
+    "vscode-languageserver-types": "^3.0.2-beta.3"
   }
 }

@@ -1,7 +1,7 @@
 import { ToTypescriptOptions } from '../ts-generation';
 import { TsNode } from './TsNode';
 import { TsResource } from './TsResource';
-import { CompletionItemKind } from 'vscode';
+import { CompletionItemKind } from 'vscode-languageserver-types';
 
 /**
  * Returns the visibility string for a given enum value.

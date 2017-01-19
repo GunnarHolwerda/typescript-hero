@@ -49,7 +49,7 @@ export class Logger implements Initializable {
      * @memberOf Logger
      */
     public initialize(connection: IConnection, params: InitializeParams): void {
-        this.info('ResolveIndex: initialize.');
+        this.info('Logger: initialize.');
         connection.onDidChangeConfiguration(changed => {
             this.configuration = changed.settings.typescriptHero;
             this.info('Logger: configuration changed.');

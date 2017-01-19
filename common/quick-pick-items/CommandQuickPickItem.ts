@@ -1,5 +1,5 @@
 import { TshCommand } from '../';
-import { QuickPickItem } from 'vscode';
+import { PickableItem } from './';
 
 /**
  * Quickpick item that contains a typescript hero command that can be executed.
@@ -9,6 +9,6 @@ import { QuickPickItem } from 'vscode';
  * @class CommandQuickPickItem
  * @implements {QuickPickItem}
  */
-export class CommandQuickPickItem implements QuickPickItem {
+export class CommandQuickPickItem implements PickableItem {
     constructor(public label: string, public description: string, public detail: string, public command: TshCommand) { }
 }

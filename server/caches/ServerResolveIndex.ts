@@ -17,7 +17,6 @@ import {
     TsResource,
     TsTypedExportableDeclaration
 } from 'typescript-hero-common';
-import { CancellationToken, CancellationTokenSource, Uri } from 'vscode';
 import { IConnection, InitializeParams } from 'vscode-languageserver';
 
 type Resources = { [name: string]: TsResource };
@@ -47,7 +46,6 @@ function getNodeLibraryName(path: string): string {
  */
 @injectable()
 export class ServerResolveIndex implements Initializable, ResolveIndex {
-    private cancelToken: CancellationTokenSource | undefined;
     private config: ExtensionConfig;
     private logger: SpecificLogger;
 
@@ -125,26 +123,14 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * Can be canceled with a cancellationToken.
      *
      * @param {string[]} filePathes
-     * @param {CancellationToken} [cancellationToken]
      * @returns {Promise<boolean>} true when the index was successful or sucessfully canceled
      * 
      * @memberOf ResolveIndex
      */
-    public async buildIndex(filePathes: string[], cancellationToken?: CancellationToken): Promise<boolean> {
-        if (this.cancelToken) {
-            this.logger.info('Refresh already running, cancelling first.');
-            this.cancelRefresh();
-        }
-
+    public async buildIndex(filePathes: string[]): Promise<boolean> {
         this.logger.info('Starting index refresh.');
-        this.cancelToken = new CancellationTokenSource();
 
         try {
-            if (cancellationToken && cancellationToken.onCancellationRequested) {
-                this.cancelRequested();
-                return true;
-            }
-
             this.logger.info(`Got ${filePathes.length} filepathes.`);
 
             // let parsed = await this.parser.parseFiles(files);
@@ -161,10 +147,6 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
             this.logger.error('Catched an error during buildIndex()', e);
             return false;
         } finally {
-            if (this.cancelToken) {
-                this.cancelToken.dispose();
-                this.cancelToken = undefined;
-            }
         }
     }
 
@@ -233,11 +215,6 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * @memberOf ResolveIndex
      */
     public cancelRefresh(): void {
-        if (this.cancelToken) {
-            this.logger.info('Canceling refresh.');
-            this.cancelToken.dispose();
-            this.cancelToken = undefined;
-        }
     }
 
     /**
@@ -262,9 +239,7 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * @memberOf ResolveIndex
      */
     private async parseResources(
-        files: TsFile[] = [],
-        cancellationToken?: CancellationToken
-    ): Promise<Resources | undefined> {
+        files: TsFile[] = []): Promise<Resources | undefined> {
         let parsedResources: Resources = {};
 
         for (let file of files) {
@@ -276,20 +251,11 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
                 let libname = getNodeLibraryName(file.filePath);
                 parsedResources[libname] = file;
             } else {
-                parsedResources[file.getIdentifier()] = file;
+                parsedResources[file.getIdentifier('')] = file;
             }
-        }
-
-        if (cancellationToken && cancellationToken.onCancellationRequested) {
-            this.cancelRequested();
-            return;
         }
 
         for (let key of Object.keys(parsedResources).sort((k1, k2) => k2.length - k1.length)) {
-            if (cancellationToken && cancellationToken.onCancellationRequested) {
-                this.cancelRequested();
-                return;
-            }
             let resource = parsedResources[key];
             resource.declarations = resource.declarations.filter(
                 o => (o instanceof TsExportableDeclaration || o instanceof TsTypedExportableDeclaration) && o.isExported
@@ -312,14 +278,8 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * @memberOf ResolveIndex
      */
     private async createIndex(
-        resources: Resources,
-        cancellationToken?: CancellationToken
+        resources: Resources
     ): Promise<ResourceIndex | undefined> {
-        if (cancellationToken && cancellationToken.onCancellationRequested) {
-            this.cancelRequested();
-            return;
-        }
-
         // Use an empty object without a prototype, so that "toString" (for example) can be indexed
         // Thanks to @gund in https://github.com/buehler/typescript-hero/issues/79
         let index: ResourceIndex = Object.create(null);
@@ -503,18 +463,18 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * 
      * @memberOf ResolveIndex
      */
-    private getExportedResources(resourceToCheck: string): Uri[] {
+    private getExportedResources(resourceToCheck: string): any[] {
         if (!this.parsedResources) {
             return [];
         }
-        let resources: Uri[] = [];
+        let resources: any[] = [];
         Object
             .keys(this.parsedResources)
             .filter(o => o.startsWith('/'))
             .forEach(key => {
                 let resource = this.parsedResources![key] as TsFile;
                 if (this.doesExportResource(resource, resourceToCheck)) {
-                    resources.push(<Uri>{ fsPath: resource.filePath });
+                    resources.push(<any>{ fsPath: resource.filePath });
                 }
             });
         return resources;
