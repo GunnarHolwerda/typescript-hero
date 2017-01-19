@@ -20,8 +20,8 @@
     "inversify": "^3.0.0",
     "reflect-metadata": "^0.1.9",
     "typescript-hero-common": "../common",
-    "vscode-languageserver": "^3.0.2-beta.3",
-    "vscode-languageserver-types": "^3.0.2-beta.3"
+    "vscode-languageserver": "3.0.2-beta.3",
+    "vscode-languageserver-types": "3.0.2-beta.3"
   },
   "devDependencies": {
     "@types/node": "^6.0.60",

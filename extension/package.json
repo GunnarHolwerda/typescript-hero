@@ -70,7 +70,7 @@
     "typescript": "~2.1.4",
     "typescript-hero-common": "../common",
     "typescript-hero-server": "../server",
-    "vscode-languageclient": "^3.0.2-beta.3"
+    "vscode-languageclient": "3.0.2-beta.3"
   },
   "activationEvents": [
     "onCommand:typescriptHero.showCmdGui",

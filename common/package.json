@@ -30,6 +30,6 @@
   },
   "dependencies": {
     "rxjs": "^5.0.3",
-    "vscode-languageserver-types": "^3.0.2-beta.3"
+    "vscode-languageserver-types": "3.0.2-beta.3"
   }
 }
