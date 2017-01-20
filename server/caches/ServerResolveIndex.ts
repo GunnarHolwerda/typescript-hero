@@ -1,6 +1,7 @@
-import { SpecificLogger } from '../utilities/SpecificLogger';
 import { Initializable } from '../Initializable';
+import { ServerConnection } from '../ServerConnection';
 import { Logger } from '../utilities/Logger';
+import { SpecificLogger } from '../utilities/SpecificLogger';
 import { injectable } from 'inversify';
 import {
     DeclarationInfo,
@@ -17,7 +18,7 @@ import {
     TsResource,
     TsTypedExportableDeclaration
 } from 'typescript-hero-common';
-import { IConnection, InitializeParams } from 'vscode-languageserver';
+import { InitializeParams } from 'vscode-languageserver';
 
 type Resources = { [name: string]: TsResource };
 
@@ -46,7 +47,7 @@ function getNodeLibraryName(path: string): string {
  */
 @injectable()
 export class ServerResolveIndex implements Initializable, ResolveIndex {
-    private config: ExtensionConfig;
+    private configuration: ExtensionConfig;
     private logger: SpecificLogger;
 
     private parsedResources: Resources | undefined = Object.create(null);
@@ -85,26 +86,20 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
     /**
      * TODO
      * 
-     * @param {IConnection} connection
+     * @param {ServerConnection} connection
      * @param {InitializeParams} params
      * 
      * @memberOf ResolveIndex
      */
-    public initialize(connection: IConnection, params: InitializeParams): void {
+    public initialize(connection: ServerConnection, params: InitializeParams): void {
         this.logger.info('initialize.');
 
-        connection.onDidChangeConfiguration(changed => this.config = changed.settings.typescriptHero);
-
-        connection.onNotification(ServerBuildIndexForFiles.method, (fileList: string[]) => this.buildIndex(fileList));
-    }
-
-    /**
-     * TODO
-     * 
-     * @memberOf ResolveIndex
-     */
-    public initialized(): void {
-        this.logger.info('initialized.');
+        connection
+            .onDidChangeConfiguration()
+            .subscribe(config => this.configuration = config);
+        connection
+            .onNotification<string[]>(ServerBuildIndexForFiles.method)
+            .subscribe(fileList => this.buildIndex(fileList));
     }
 
     /**

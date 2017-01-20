@@ -1,9 +1,10 @@
 import { Initializable } from '../Initializable';
+import { ServerConnection } from '../ServerConnection';
 import { SpecificLogger } from './SpecificLogger';
 import { injectable } from 'inversify';
 import { ExtensionConfig, LogLevel } from 'typescript-hero-common';
 import * as util from 'util';
-import { IConnection, InitializeParams, MessageType } from 'vscode-languageserver';
+import { InitializeParams, MessageType } from 'vscode-languageserver';
 
 type LogMessage = { message: string, type: MessageType, level: LogLevel, data: any };
 
@@ -38,34 +39,29 @@ function getLogLevel(verbosity: string): LogLevel {
 export class Logger implements Initializable {
     private messageBuffer: LogMessage[] = [];
     private configuration: ExtensionConfig;
-    private connection: IConnection;
+    private connection: ServerConnection;
 
     /**
      * Initialize the logger instance
      * 
-     * @param {IConnection} connection
+     * @param {ServerConnection} connection
      * @param {InitializeParams} params
      * 
      * @memberOf Logger
      */
-    public initialize(connection: IConnection, params: InitializeParams): void {
+    public initialize(connection: ServerConnection, params: InitializeParams): void {
         this.info('Logger: initialize.');
-        connection.onDidChangeConfiguration(changed => {
-            this.configuration = changed.settings.typescriptHero;
-            this.info('Logger: configuration changed.');
+
+        connection.onDidChangeConfiguration().subscribe(config => {
+            this.configuration = config;
             this.trySendBuffer();
         });
-        this.connection = connection;
-    }
+        connection.onInitialized().subscribe(() => {
+            this.info('Logger: initialized.');
+            this.trySendBuffer();
+        });
 
-    /**
-     * Method that should be called when the client fires the onInitialized() event.
-     * 
-     * @memberOf Logger
-     */
-    public initialized(): void {
-        this.info('Logger: initialized.');
-        this.trySendBuffer();
+        this.connection = connection;
     }
 
     /**

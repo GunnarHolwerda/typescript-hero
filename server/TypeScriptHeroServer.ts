@@ -1,3 +1,4 @@
+import { ServerConnection } from './ServerConnection';
 import 'reflect-metadata';
 import { Initializable } from './Initializable';
 import { Container } from './IoC';
@@ -5,14 +6,13 @@ import { createConnection, IConnection, IPCMessageReader, IPCMessageWriter } fro
 
 const connection: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 connection.listen();
+const serverConnection = new ServerConnection(connection);
 
 const parts = Container.getAll<Initializable>('ServerParts');
 
 connection.onInitialize(params => {
-    parts.forEach(o => o.initialize(connection, params));
+    parts.forEach(o => o.initialize(serverConnection, params));
     return {
         capabilities: {}
     };
 });
-
-connection.onInitialized(() => parts.forEach(o => o.initialized()));
