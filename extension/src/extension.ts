@@ -1,3 +1,4 @@
+import { ClientConnection } from './utilities/ClientConnection';
 import 'reflect-metadata';
 import { createServerConnection } from './createServerConnection';
 import { Injector } from './IoC';
@@ -18,7 +19,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         Injector.unbind('context');
     }
     Injector.bind<ExtensionContext>('context').toConstantValue(context);
-    Injector.bind(LanguageClient).toConstantValue(await createServerConnection(context));
+    Injector.bind(ClientConnection).toConstantValue(await createServerConnection(context));
 
     extension = Injector.get(TypeScriptHero);
 }

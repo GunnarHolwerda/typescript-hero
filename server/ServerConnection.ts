@@ -1,6 +1,7 @@
-import { ExtensionConfig } from 'typescript-hero-common';
 import { Observable, Subject } from 'rxjs';
-import { IConnection, DidChangeConfigurationParams } from 'vscode-languageserver';
+import { ExtensionConfig } from 'typescript-hero-common';
+import { GenericRequestHandler } from 'vscode-jsonrpc';
+import { IConnection, ResponseError } from 'vscode-languageserver';
 
 /**
  * TODO
@@ -59,7 +60,22 @@ export class ServerConnection {
         return this.handler[method];
     }
 
-    //onRequest
+    /**
+     * TODO
+     * 
+     * @template TResult
+     * @template TError
+     * @param {string} method
+     * @param {GenericRequestHandler<TResult, TError>} handler
+     * 
+     * @memberOf ServerConnection
+     */
+    public onRequest<TResult, TError>(
+        method: string,
+        handler: GenericRequestHandler<TResult, TError>
+    ): void {
+        this.endpoint.onRequest(method, handler);
+    }
 
     /**
      * TODO

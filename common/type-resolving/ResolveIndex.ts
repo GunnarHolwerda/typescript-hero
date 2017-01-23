@@ -15,11 +15,11 @@ export interface ResolveIndex {
      * Tells the index to build a new index.
      * 
      * @param {string[]} filePathes
-     * @returns {Promise<boolean>} true when the index was successful or sucessfully canceled
+     * @returns {Promise<void>}
      * 
      * @memberOf ResolveIndex
      */
-    buildIndex(filePathes: string[]): Promise<boolean>;
+    buildIndex(filePathes: string[]): Promise<void>;
 
     /**
      * Rebuild the cache for one specific file. This can happen if a file is changed (saved)

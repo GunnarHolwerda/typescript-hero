@@ -9,7 +9,7 @@ import {
     ModuleDeclaration,
     ResolveIndex,
     ResourceIndex,
-    ServerBuildIndexForFiles,
+    NOTIFICATIONS,
     TsAssignedExport,
     TsExportableDeclaration,
     TsFile,
@@ -49,6 +49,7 @@ function getNodeLibraryName(path: string): string {
 export class ServerResolveIndex implements Initializable, ResolveIndex {
     private configuration: ExtensionConfig;
     private logger: SpecificLogger;
+    private connection: ServerConnection;
 
     private parsedResources: Resources | undefined = Object.create(null);
     private _index: ResourceIndex | undefined;
@@ -98,8 +99,10 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
             .onDidChangeConfiguration()
             .subscribe(config => this.configuration = config);
         connection
-            .onNotification<string[]>(ServerBuildIndexForFiles.method)
-            .subscribe(fileList => this.buildIndex(fileList));
+            .onNotification<string[]>(NOTIFICATIONS.ServerBuildIndexForFiles)
+            .subscribe(files => this.buildIndex(files));
+
+        this.connection = connection;
     }
 
     /**
@@ -122,7 +125,7 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * 
      * @memberOf ResolveIndex
      */
-    public async buildIndex(filePathes: string[]): Promise<boolean> {
+    public async buildIndex(filePathes: string[]): Promise<void> {
         this.logger.info('Starting index refresh.');
 
         try {
@@ -134,14 +137,13 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
             //     this.cancelRequested();
             //     return true;
             // }
-
+            
             // this.parsedResources = await this.parseResources(parsed, cancellationToken);
             // this._index = await this.createIndex(this.parsedResources, cancellationToken);
-            return true;
+            this.connection.sendNotification(NOTIFICATIONS.ServerBuiltIndex, true);
         } catch (e) {
             this.logger.error('Catched an error during buildIndex()', e);
-            return false;
-        } finally {
+            this.connection.sendNotification(NOTIFICATIONS.ServerBuiltIndex, false);
         }
     }
 

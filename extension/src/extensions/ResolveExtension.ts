@@ -6,9 +6,13 @@ import { TshCommand } from '../models/TshCommand';
 import { TsResourceParser } from '../parser/TsResourceParser';
 import { ResolveCompletionItemProvider } from '../provider/ResolveCompletionItemProvider';
 import { ResolveQuickPickProvider } from '../provider/ResolveQuickPickProvider';
+import { ClientConnection } from '../utilities/ClientConnection';
 import { Logger, LoggerFactory } from '../utilities/Logger';
 import { BaseExtension } from './BaseExtension';
+import { existsSync } from 'fs';
 import { inject, injectable } from 'inversify';
+import { join } from 'path';
+import { NOTIFICATIONS } from 'typescript-hero-common';
 import {
     commands,
     ExtensionContext,
@@ -20,7 +24,6 @@ import {
     window,
     workspace
 } from 'vscode';
-import { LanguageClient } from 'vscode-languageclient';
 
 type ImportInformation = {};
 
@@ -75,7 +78,7 @@ export class ResolveExtension extends BaseExtension {
         private config: ExtensionConfig,
         private index: ResolveIndex,
         private completionProvider: ResolveCompletionItemProvider,
-        private client: LanguageClient
+        private client: ClientConnection
     ) {
         super();
 
@@ -196,12 +199,15 @@ export class ResolveExtension extends BaseExtension {
             }
         }));
 
+        this.client.onNotification<boolean>(NOTIFICATIONS.ServerBuiltIndex).subscribe(success => {
+            this.statusBarItem.text = success ? resolverOk : resolverErr;
+        });
+
         this.logger.info('Initialized.');
     }
 
     /**
      * Disposes the extension.
-     * 
      * 
      * @memberOf ResolveExtension
      */
@@ -335,15 +341,18 @@ export class ResolveExtension extends BaseExtension {
     private async refreshIndex(file?: Uri): Promise<void> {
         this.statusBarItem.text = resolverSyncing;
 
-        let result: boolean;
-
         if (file) {
-            result = await this.index.rebuildForFile(file.fsPath);
+            this.client.sendNotification(
+                NOTIFICATIONS.ServerBuildIndexForFiles,
+                [file.fsPath]
+            );
         } else {
-            result = await this.index.buildIndex();
+            let files = await this.findFiles();
+            this.client.sendNotification(
+                NOTIFICATIONS.ServerBuildIndexForFiles,
+                files.map(o => o.fsPath)
+            );
         }
-
-        this.statusBarItem.text = result ? resolverOk : resolverErr;
     }
 
     /**
@@ -373,5 +382,72 @@ export class ResolveExtension extends BaseExtension {
         let selection = editor.selection,
             word = editor.document.getWordRangeAtPosition(selection.active);
         return word && !word.isEmpty ? editor.document.getText(word) : '';
+    }
+
+    /**
+     * Searches through all workspace files to return those, that need to be indexed.
+     * The following search patterns apply:
+     * - All *.ts and *.tsx of the actual workspace
+     * - All *.d.ts files that live in a linked node_module folder (if there is a package.json)
+     * - All *.d.ts files that are located in a "typings" folder
+     * 
+     * @private
+     * @param {CancellationToken} cancellationToken
+     * @returns {Promise<Uri[]>}
+     * 
+     * @memberOf ResolveIndex
+     */
+    private async findFiles(): Promise<Uri[]> {
+        let searches: PromiseLike<Uri[]>[] = [
+            workspace.findFiles(
+                '{**/*.ts,**/*.tsx}',
+                '{**/node_modules/**,**/typings/**}'
+            )
+        ];
+
+        let globs = [],
+            ignores = ['**/typings/**'];
+
+        if (workspace.rootPath && existsSync(join(workspace.rootPath, 'package.json'))) {
+            let packageJson = require(join(workspace.rootPath, 'package.json'));
+            if (packageJson['dependencies']) {
+                globs = globs.concat(
+                    Object.keys(packageJson['dependencies']).map(o => `**/node_modules/${o}/**/*.d.ts`)
+                );
+                ignores = ignores.concat(
+                    Object.keys(packageJson['dependencies']).map(o => `**/node_modules/${o}/node_modules/**`)
+                );
+            }
+            if (packageJson['devDependencies']) {
+                globs = globs.concat(
+                    Object.keys(packageJson['devDependencies']).map(o => `**/node_modules/${o}/**/*.d.ts`)
+                );
+                ignores = ignores.concat(
+                    Object.keys(packageJson['devDependencies']).map(o => `**/node_modules/${o}/node_modules/**`)
+                );
+            }
+        } else {
+            globs.push('**/node_modules/**/*.d.ts');
+        }
+        searches.push(
+            workspace.findFiles(`{${globs.join(',')}}`, `{${ignores.join(',')}}`)
+        );
+
+        searches.push(
+            workspace.findFiles('**/typings/**/*.d.ts', '**/node_modules/**')
+        );
+
+        let uris = await Promise.all(searches);
+        let excludePatterns = this.config.resolver.ignorePatterns;
+        uris = uris.map((o, idx) => idx === 0 ?
+            o.filter(
+                f => f.fsPath
+                    .replace(workspace.rootPath, '')
+                    .split(/\\|\//)
+                    .every(p => excludePatterns.indexOf(p) < 0)) :
+            o
+        );
+        this.logger.info(`Found ${uris.reduce((sum, cur) => sum + cur.length, 0)} files.`);
+        return uris.reduce((all, cur) => all.concat(cur), []);
     }
 }

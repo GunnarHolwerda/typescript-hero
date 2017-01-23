@@ -1,3 +1,4 @@
+import { ClientConnection } from './utilities/ClientConnection';
 import { ExtensionContext } from 'vscode';
 import { ServerOptions, TransportKind, LanguageClientOptions, LanguageClient } from 'vscode-languageclient';
 
@@ -6,9 +7,9 @@ import { ServerOptions, TransportKind, LanguageClientOptions, LanguageClient } f
  * 
  * @export
  * @param {ExtensionContext} context
- * @returns {Promise<LanguageClient>}
+ * @returns {Promise<ClientConnection>}
  */
-export async function createServerConnection(context: ExtensionContext): Promise<LanguageClient> {
+export async function createServerConnection(context: ExtensionContext): Promise<ClientConnection> {
     let module = require.resolve('typescript-hero-server'),
         options = { execArgv: ['--nolazy', '--debug=6004'] };
 
@@ -30,5 +31,5 @@ export async function createServerConnection(context: ExtensionContext): Promise
 
     context.subscriptions.push(client.start());
     await client.onReady();
-    return client;
+    return new ClientConnection(client);
 }

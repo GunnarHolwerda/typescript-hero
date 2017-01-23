@@ -1,1 +1,6 @@
-export const foo = '';
+/**
+ * TODO
+ */
+export const REQUESTS = {
+    ServerBuildIndexForFiles: 'server/buildIndexForFiles'
+};

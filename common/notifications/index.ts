@@ -1,1 +1,7 @@
-export * from './ServerBuildIndexForFiles';
+/**
+ * TODO
+ */
+export const NOTIFICATIONS = {
+    ServerBuildIndexForFiles: 'server/buildIndexForFiles',
+    ServerBuiltIndex: 'server/builtIndex'
+};
