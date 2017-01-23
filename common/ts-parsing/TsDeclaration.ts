@@ -9,7 +9,7 @@ import { CompletionItemKind } from 'vscode-languageserver-types';
  * @param {DeclarationVisibility} visibility
  * @returns {string}
  */
-function getVisibilityText(visibility: DeclarationVisibility): string {
+function getVisibilityText(visibility?: DeclarationVisibility): string {
     switch (visibility) {
         case DeclarationVisibility.Private:
             return 'private';
@@ -106,7 +106,7 @@ export abstract class TsExportableDeclaration extends TsDeclaration {
  * @extends {TsTypedDeclaration}
  */
 export abstract class TsTypedExportableDeclaration extends TsTypedDeclaration {
-    constructor(name: string, type: string, start: number, end: number, public isExported: boolean) {
+    constructor(name: string, type: string | undefined, start: number, end: number, public isExported: boolean) {
         super(name, type, start, end);
     }
 }
@@ -194,7 +194,7 @@ export class PropertyDeclaration extends TsTypedDeclaration {
 
     constructor(
         name: string,
-        public visibility: DeclarationVisibility,
+        public visibility?: DeclarationVisibility,
         type?: string,
         start?: number,
         end?: number

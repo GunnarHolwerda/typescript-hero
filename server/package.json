@@ -21,14 +21,14 @@
     "reflect-metadata": "^0.1.9",
     "rxjs": "^5.0.3",
     "typescript-hero-common": "../common",
+    "typescript": "^2.1.4",
     "vscode-languageserver": "3.0.2-beta.3",
     "vscode-languageserver-types": "3.0.2-beta.3"
   },
   "devDependencies": {
     "@types/node": "^6.0.60",
     "del-cli": "^0.2.1",
-    "tslint-jsdoc-rules": "^0.1.2",
-    "typescript": "^2.1.4"
+    "tslint-jsdoc-rules": "^0.1.2"
   },
   "scripts": {
     "predevelop": "del-cli \"./**/*.js\" \"./**/*.js.map\" \"./**/*.d.ts\" \"!./node_modules/**/*\"",
