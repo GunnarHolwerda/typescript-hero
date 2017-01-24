@@ -1,10 +1,10 @@
-import { join, normalize, parse, relative, resolve } from 'path';
 import { Initializable } from '../Initializable';
 import { TsResourceParser } from '../parsing/TsResourceParser';
 import { ServerConnection } from '../ServerConnection';
 import { Logger } from '../utilities/Logger';
 import { SpecificLogger } from '../utilities/SpecificLogger';
 import { injectable } from 'inversify';
+import { join, normalize, relative, resolve } from 'path';
 import {
     DeclarationInfo,
     ExtensionConfig,
@@ -22,7 +22,7 @@ import {
     TsResource,
     TsTypedExportableDeclaration
 } from 'typescript-hero-common';
-import { InitializeParams, FileEvent, FileChangeType } from 'vscode-languageserver';
+import { FileChangeType, FileEvent, InitializeParams } from 'vscode-languageserver';
 
 type Resources = { [name: string]: TsResource };
 

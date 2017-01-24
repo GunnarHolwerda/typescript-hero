@@ -171,7 +171,6 @@ export class ResolveExtension extends BaseExtension {
 
         context.subscriptions.push(workspace.onDidChangeConfiguration(() => {
             if (!compareIgnorePatterns(this.ignorePatterns, this.config.resolver.ignorePatterns)) {
-                // TODO move to srv.
                 this.logger.info('The typescriptHero.resolver.ignorePatterns setting was modified, reload the index.');
                 this.refreshIndex();
                 this.ignorePatterns = this.config.resolver.ignorePatterns;
