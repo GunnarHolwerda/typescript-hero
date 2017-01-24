@@ -1,6 +1,6 @@
 import { ClientConnection } from './utilities/ClientConnection';
-import { ExtensionContext } from 'vscode';
-import { ServerOptions, TransportKind, LanguageClientOptions, LanguageClient } from 'vscode-languageclient';
+import { ExtensionContext, workspace } from 'vscode';
+import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient';
 
 /**
  * TODO
@@ -21,7 +21,10 @@ export async function createServerConnection(context: ExtensionContext): Promise
     let clientOptions: LanguageClientOptions = {
         documentSelector: ['typescript', 'typescriptreact'],
         synchronize: {
-            configurationSection: 'typescriptHero'
+            configurationSection: 'typescriptHero',
+            fileEvents: [
+                workspace.createFileSystemWatcher('{**/*.ts,**/package.json,**/typings.json}', true)
+            ]
         }
     };
 

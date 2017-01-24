@@ -66,9 +66,6 @@ function compareIgnorePatterns(local: string[], config: string[]): boolean {
 export class ResolveExtension extends BaseExtension {
     private logger: Logger;
     private statusBarItem: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 4);
-    private fileWatcher: FileSystemWatcher = workspace.createFileSystemWatcher(
-        '{**/*.ts,**/package.json,**/typings.json}', true
-    );
     private ignorePatterns: string[];
 
     constructor(
@@ -157,42 +154,24 @@ export class ResolveExtension extends BaseExtension {
         context.subscriptions.push(
             commands.registerCommand('typescriptHero.resolve.rebuildCache', () => this.refreshIndex())
         );
-        context.subscriptions.push(languages.registerCompletionItemProvider('typescript', this.completionProvider));
+        context.subscriptions.push(
+            languages.registerCompletionItemProvider('typescript', this.completionProvider)
+        );
         context.subscriptions.push(
             languages.registerCompletionItemProvider('typescriptreact', this.completionProvider)
         );
         context.subscriptions.push(this.statusBarItem);
-        context.subscriptions.push(this.fileWatcher);
 
-        this.statusBarItem.text = resolverOk;
+        this.statusBarItem.text = resolverSyncing;
         this.statusBarItem.tooltip = 'Click to manually reindex all files.';
         this.statusBarItem.command = 'typescriptHero.resolve.rebuildCache';
         this.statusBarItem.show();
 
         this.refreshIndex();
 
-        this.fileWatcher.onDidChange(uri => {
-            if (uri.fsPath.endsWith('.d.ts')) {
-                return;
-            }
-            if (uri.fsPath.endsWith('package.json') || uri.fsPath.endsWith('typings.json')) {
-                this.logger.info('package.json or typings.json modified. Refreshing index.');
-                this.refreshIndex();
-            } else {
-                this.logger.info(`File "${uri.fsPath}" changed. Reindexing file.`);
-                this.refreshIndex(uri);
-            }
-        });
-        this.fileWatcher.onDidDelete(uri => {
-            if (uri.fsPath.endsWith('.d.ts')) {
-                return;
-            }
-            this.logger.info(`File "${uri.fsPath}" deleted. Removing file.`);
-            this.index.removeForFile(uri.fsPath);
-        });
-
         context.subscriptions.push(workspace.onDidChangeConfiguration(() => {
             if (!compareIgnorePatterns(this.ignorePatterns, this.config.resolver.ignorePatterns)) {
+                // TODO move to srv.
                 this.logger.info('The typescriptHero.resolver.ignorePatterns setting was modified, reload the index.');
                 this.refreshIndex();
                 this.ignorePatterns = this.config.resolver.ignorePatterns;
@@ -334,25 +313,17 @@ export class ResolveExtension extends BaseExtension {
      * Refresh the symbol index for a file or if the file uri is omitted, refresh the whole index.
      * 
      * @private
-     * @param {Uri} [file]
      * 
      * @memberOf ResolveExtension
      */
-    private async refreshIndex(file?: Uri): Promise<void> {
+    private async refreshIndex(): Promise<void> {
         this.statusBarItem.text = resolverSyncing;
 
-        if (file) {
-            this.client.sendNotification(
-                NOTIFICATIONS.ServerBuildIndexForFiles,
-                [file.fsPath]
-            );
-        } else {
-            let files = await this.findFiles();
-            this.client.sendNotification(
-                NOTIFICATIONS.ServerBuildIndexForFiles,
-                files.map(o => o.fsPath)
-            );
-        }
+        let files = await this.findFiles();
+        this.client.sendNotification(
+            NOTIFICATIONS.ServerBuildIndexForFiles,
+            files.map(o => o.fsPath)
+        );
     }
 
     /**

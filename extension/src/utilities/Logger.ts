@@ -49,7 +49,12 @@ export class Logger {
      * @memberOf Logger
      */
     public error(message: string, data?: any): void {
-        this.log(LogLevel.Errors, `ERROR\t ${message}`, data);
+        this.log(
+            LogLevel.Errors,
+            'Error',
+            message,
+            data
+        );
     }
 
     /**
@@ -61,7 +66,12 @@ export class Logger {
      * @memberOf Logger
      */
     public warning(message: string, data?: any): void {
-        this.log(LogLevel.Warnings, `WARNING\t ${message}`, data);
+        this.log(
+            LogLevel.Warnings,
+            'Warn ',
+            message,
+            data
+        );
     }
 
     /**
@@ -73,7 +83,12 @@ export class Logger {
      * @memberOf Logger
      */
     public info(message: string, data?: any): void {
-        this.log(LogLevel.All, `INFO\t ${message}`, data);
+        this.log(
+            LogLevel.All,
+            'Info ',
+            message,
+            data
+        );
     }
 
     /**
@@ -87,14 +102,40 @@ export class Logger {
      * 
      * @memberOf Logger
      */
-    private log(level: LogLevel, message: string, data?: any): void {
+    private log(level: LogLevel, severity: string, message: string, data?: any): void {
         if (this.config.logLevel >= level) {
+            let msg = `[${severity} - ${this.getDate()}] ${this.prefix ? this.prefix + ' - ' : ''}${message}`;
             // tslint:disable-next-line
-            console.log(`${this.prefix ? `${this.prefix}: ` : ''}${message}`, data);
-            Logger.channel.appendLine(`${this.prefix ? `${this.prefix}: ` : ''}${message}`);
+            console.log(msg, data);
+            Logger.channel.appendLine(msg);
             if (data) {
                 Logger.channel.appendLine(`\tData:\t${util.inspect(data, {})}`);
             }
         }
+    }
+
+    /**
+     * TODO
+     * 
+     * @private
+     * @returns {string}
+     * 
+     * @memberOf Logger
+     */
+    private getDate(): string {
+        const date = new Date();
+        let hours = date.getHours().toString(),
+            minutes = date.getMinutes().toString(),
+            seconds = date.getSeconds().toString();
+        if (hours.length < 2) {
+            hours = `0${hours}`;
+        }
+        if (minutes.length < 2) {
+            minutes = `0${minutes}`;
+        }
+        if (seconds.length < 2) {
+            seconds = `0${seconds}`;
+        }
+        return `${hours}:${minutes}:${seconds}`;
     }
 }
