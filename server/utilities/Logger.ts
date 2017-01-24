@@ -75,8 +75,8 @@ export class Logger implements Initializable {
     public createSpecificLogger(prefix: string): SpecificLogger {
         return {
             info: (message: string, data?: any) => this.info(`${prefix}: ${message}`, data),
-            warning: (message: string, data?: any) => this.info(`${prefix}: ${message}`, data),
-            error: (message: string, data?: any) => this.info(`${prefix}: ${message}`, data)
+            warning: (message: string, data?: any) => this.warning(`${prefix}: ${message}`, data),
+            error: (message: string, data?: any) => this.error(`${prefix}: ${message}`, data)
         };
     }
 

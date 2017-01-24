@@ -1,4 +1,6 @@
+import { join, normalize, parse, relative } from 'path';
 import { Initializable } from '../Initializable';
+import { TsResourceParser } from '../parsing/TsResourceParser';
 import { ServerConnection } from '../ServerConnection';
 import { Logger } from '../utilities/Logger';
 import { SpecificLogger } from '../utilities/SpecificLogger';
@@ -7,9 +9,10 @@ import {
     DeclarationInfo,
     ExtensionConfig,
     ModuleDeclaration,
+    NOTIFICATIONS,
     ResolveIndex,
     ResourceIndex,
-    NOTIFICATIONS,
+    TsAllFromExport,
     TsAssignedExport,
     TsExportableDeclaration,
     TsFile,
@@ -18,7 +21,7 @@ import {
     TsResource,
     TsTypedExportableDeclaration
 } from 'typescript-hero-common';
-import { InitializeParams } from 'vscode-languageserver';
+import { InitializeParams, FileEvent, FileChangeType } from 'vscode-languageserver';
 
 type Resources = { [name: string]: TsResource };
 
@@ -50,8 +53,9 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
     private configuration: ExtensionConfig;
     private logger: SpecificLogger;
     private connection: ServerConnection;
+    private rootUri: string | null;
 
-    private parsedResources: Resources | undefined = Object.create(null);
+    private parsedResources: Resources = Object.create(null);
     private _index: ResourceIndex | undefined;
 
     /**
@@ -80,7 +84,7 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
             .reduce((all, key) => all.concat(this.index![key]), <DeclarationInfo[]>[]);
     }
 
-    constructor(logger: Logger) {
+    constructor(logger: Logger, private parser: TsResourceParser) {
         this.logger = logger.createSpecificLogger('ServerResolveIndex');
     }
 
@@ -95,12 +99,17 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
     public initialize(connection: ServerConnection, params: InitializeParams): void {
         this.logger.info('initialize.');
 
+        this.rootUri = params.rootUri;
+
         connection
             .onDidChangeConfiguration()
             .subscribe(config => this.configuration = config);
         connection
             .onNotification<string[]>(NOTIFICATIONS.ServerBuildIndexForFiles)
             .subscribe(files => this.buildIndex(files));
+        connection
+            .onDidChangeWatchedFiles()
+            .subscribe(events => this.watchedFilesChange(events.changes));
 
         this.connection = connection;
     }
@@ -121,7 +130,7 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * Can be canceled with a cancellationToken.
      *
      * @param {string[]} filePathes
-     * @returns {Promise<boolean>} true when the index was successful or sucessfully canceled
+     * @returns {Promise<void>} true when the index was successful or sucessfully canceled
      * 
      * @memberOf ResolveIndex
      */
@@ -130,88 +139,17 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
 
         try {
             this.logger.info(`Got ${filePathes.length} filepathes.`);
-
-            // let parsed = await this.parser.parseFiles(files);
-
-            // if (cancellationToken && cancellationToken.onCancellationRequested) {
-            //     this.cancelRequested();
-            //     return true;
-            // }
-            
-            // this.parsedResources = await this.parseResources(parsed, cancellationToken);
-            // this._index = await this.createIndex(this.parsedResources, cancellationToken);
+            let parsed = await this.parser.parseFiles(filePathes);
+            this.parsedResources = await this.parseResources(parsed);
+            this._index = await this.createIndex(this.parsedResources);
             this.connection.sendNotification(NOTIFICATIONS.ServerBuiltIndex, true);
+            this.logger.info(
+                `Parsed and indexed ${filePathes.length} files, found ${Object.keys(this._index).length} symbols.`
+            );
         } catch (e) {
             this.logger.error('Catched an error during buildIndex()', e);
             this.connection.sendNotification(NOTIFICATIONS.ServerBuiltIndex, false);
         }
-    }
-
-    /**
-     * Rebuild the cache for one specific file. This can happen if a file is changed (saved)
-     * and contains a new symbol. All resources are searched for files that possibly export
-     * stuff from the given file and are rebuilt as well.
-     * 
-     * @param {string} filePath
-     * @returns {Promise<boolean>}
-     * 
-     * @memberOf ResolveIndex
-     */
-    public async rebuildForFile(filePath: string): Promise<boolean> {
-        // let rebuildResource = '/' + workspace.asRelativePath(filePath).replace(/[.]tsx?/g, ''),
-        //     rebuildFiles = [<Uri>{ fsPath: filePath }, ...this.getExportedResources(rebuildResource)];
-
-        // try {
-        //     let resources = await this.parseResources(await this.parser.parseFiles(rebuildFiles));
-
-        //     for (let key of Object.keys(resources)) {
-        //         this.parsedResources[key] = resources[key];
-        //     }
-        //     this._index = await this.createIndex(this.parsedResources);
-        //     return true;
-        // } catch (e) {
-        //     this.logger.error('Catched an error during rebuildForFile()', e);
-        //     return false;
-        // }
-        return true;
-    }
-
-    /**
-     * Removes the definitions and symbols for a specific file. This happens when
-     * a file is deleted. All files that export symbols from this file are rebuilt as well.
-     * 
-     * @param {string} filePath
-     * @returns {Promise<void>}
-     * 
-     * @memberOf ResolveIndex
-     */
-    public async removeForFile(filePath: string): Promise<boolean> {
-        // let removeResource = '/' + workspace.asRelativePath(filePath).replace(/[.]tsx?/g, ''),
-        //     rebuildFiles = this.getExportedResources(removeResource);
-
-        // try {
-        //     let resources = await this.parseResources(await this.parser.parseFiles(rebuildFiles));
-
-        //     delete this.parsedResources[removeResource];
-        //     for (let key of Object.keys(resources)) {
-        //         this.parsedResources[key] = resources[key];
-        //     }
-        //     this._index = await this.createIndex(this.parsedResources);
-        //     return true;
-        // } catch (e) {
-        //     this.logger.error('Catched an error during removeForFile()', e);
-        //     return false;
-        // }
-        return true;
-    }
-
-    /**
-     * Possibility to cancel a scheduled index refresh. Does dispose the cancellationToken
-     * to indicate a cancellation.
-     * 
-     * @memberOf ResolveIndex
-     */
-    public cancelRefresh(): void {
     }
 
     /**
@@ -220,8 +158,58 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * @memberOf ResolveIndex
      */
     public reset(): void {
-        this.parsedResources = undefined;
+        this.parsedResources = Object.create(null);
         this._index = undefined;
+    }
+
+    /**
+     * TODO
+     * 
+     * @private
+     * @param {FileEvent[]} events
+     * 
+     * @memberOf ServerResolveIndex
+     */
+    private async watchedFilesChange(events: FileEvent[]): Promise<void> {
+        let filesToRebuild: string[] = [],
+            resourcesToDelete: string[] = [];
+
+        for (let fileEvent of events) {
+            let rebuildResource = '',
+                filePath = fileEvent.uri.replace('file://', '');
+
+            if (fileEvent.type === FileChangeType.Changed) {
+                rebuildResource = '/' + relative(this.rootUri || '', filePath).replace(/[.]tsx?/g, '');
+                if (filesToRebuild.indexOf(filePath) < 0) {
+                    filesToRebuild.push(filePath);
+                }
+            } else if (fileEvent.type === FileChangeType.Deleted) {
+                let removeResource = '/' + relative(this.rootUri || '', filePath).replace(/[.]tsx?/g, '');
+                if (resourcesToDelete.indexOf(removeResource) < 0) {
+                    resourcesToDelete.push(removeResource);
+                }
+                rebuildResource = removeResource;
+            }
+            for (let file of this.getExportedResources(rebuildResource)) {
+                if (filesToRebuild.indexOf(file) < 0) {
+                    filesToRebuild.push(file);
+                }
+            }
+        }
+
+        this.logger.info('Files have changed, going to rebuild', {
+            update: filesToRebuild,
+            delete: resourcesToDelete
+        });
+
+        let resources = await this.parseResources(await this.parser.parseFiles(filesToRebuild));
+        for (let del of resourcesToDelete) {
+            delete this.parsedResources[del];
+        }
+        for (let key of Object.keys(resources)) {
+            this.parsedResources[key] = resources[key];
+        }
+        this._index = await this.createIndex(this.parsedResources);
     }
 
     /**
@@ -236,8 +224,8 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * @memberOf ResolveIndex
      */
     private async parseResources(
-        files: TsFile[] = []): Promise<Resources | undefined> {
-        let parsedResources: Resources = {};
+        files: TsFile[] = []): Promise<Resources> {
+        let parsedResources: Resources = Object.create(null);
 
         for (let file of files) {
             if (file.filePath.indexOf('typings') > -1 || file.filePath.indexOf('node_modules/@types') > -1) {
@@ -456,22 +444,22 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
      * 
      * @private
      * @param {string} resourceToCheck
-     * @returns {Uri[]}
+     * @returns {string[]}
      * 
      * @memberOf ResolveIndex
      */
-    private getExportedResources(resourceToCheck: string): any[] {
+    private getExportedResources(resourceToCheck: string): string[] {
         if (!this.parsedResources) {
             return [];
         }
-        let resources: any[] = [];
+        let resources: string[] = [];
         Object
             .keys(this.parsedResources)
             .filter(o => o.startsWith('/'))
             .forEach(key => {
                 let resource = this.parsedResources![key] as TsFile;
                 if (this.doesExportResource(resource, resourceToCheck)) {
-                    resources.push(<any>{ fsPath: resource.filePath });
+                    resources.push(resource.filePath);
                 }
             });
         return resources;
@@ -491,27 +479,18 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
     private doesExportResource(resource: TsFile, resourcePath: string): boolean {
         let exportsResource = false;
 
-        // for (let ex of resource.exports) {
-        //     if (exportsResource) {
-        //         break;
-        //     }
-        //     if (ex instanceof TsAllFromExport || ex instanceof TsNamedFromExport) {
-        //         let exported = '/' + workspace.asRelativePath(normalize(join(resource.parsedPath.dir, ex.from)));
-        //         exportsResource = exported === resourcePath;
-        //     }
-        // }
+        for (let ex of resource.exports) {
+            if (exportsResource) {
+                break;
+            }
+            if (ex instanceof TsAllFromExport || ex instanceof TsNamedFromExport) {
+                let exported = '/' + relative(
+                    this.rootUri || '', normalize(join(resource.parsedPath.dir, ex.from || ''))
+                );
+                exportsResource = exported === resourcePath;
+            }
+        }
 
         return exportsResource;
-    }
-
-    /**
-     * Loggs the requested cancellation.
-     * 
-     * @private
-     * 
-     * @memberOf ResolveIndex
-     */
-    private cancelRequested(): void {
-        this.logger.info('Cancellation requested.');
     }
 }

@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 import { ExtensionConfig } from 'typescript-hero-common';
 import { GenericRequestHandler } from 'vscode-jsonrpc';
-import { IConnection, ResponseError } from 'vscode-languageserver';
+import { DidChangeWatchedFilesParams, IConnection } from 'vscode-languageserver';
 
 /**
  * TODO
@@ -14,7 +14,19 @@ export class ServerConnection {
 
     constructor(private endpoint: IConnection) { }
 
-    //sendRequest<R>(method: string, ...params: any[]): Thenable<R>;
+    /**
+     * TODO
+     * 
+     * @template T
+     * @param {string} method
+     * @param {*} params
+     * @returns {Thenable<T>}
+     * 
+     * @memberOf ClientConnection
+     */
+    public sendRequest<T>(method: string, params: any): Thenable<T> {
+        return this.endpoint.sendRequest(method, params);
+    }
 
     /**
      * TODO
@@ -92,5 +104,22 @@ export class ServerConnection {
             );
         }
         return this.handler['onDidChangeConfiguration'];
+    }
+
+    /**
+     * TODO
+     * 
+     * @returns {Observable<DidChangeWatchedFilesParams>}
+     * 
+     * @memberOf ServerConnection
+     */
+    public onDidChangeWatchedFiles(): Observable<DidChangeWatchedFilesParams> {
+        if (!this.handler['workspace/didChangeWatchedFiles']) {
+            this.handler['workspace/didChangeWatchedFiles'] = new Subject<DidChangeWatchedFilesParams>();
+            this.endpoint.onDidChangeWatchedFiles(
+                params => this.handler['workspace/didChangeWatchedFiles'].next(params)
+            );
+        }
+        return this.handler['workspace/didChangeWatchedFiles'];
     }
 }
