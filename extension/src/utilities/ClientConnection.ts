@@ -30,12 +30,12 @@ export class ClientConnection {
      * 
      * @template T
      * @param {string} method
-     * @param {*} params
+     * @param {*} [params]
      * @returns {Thenable<T>}
      * 
      * @memberOf ClientConnection
      */
-    public sendRequest<T>(method: string, params: any): Thenable<T> {
+    public sendRequest<T>(method: string, params?: any): Thenable<T> {
         return this.endpoint.sendRequest(method, params);
     }
 

@@ -1,4 +1,4 @@
-import { ResolveIndex } from '../caches/ResolveIndex';
+import { DeclarationInfo, ResolveIndex } from '../caches/ResolveIndex';
 import { ExtensionConfig } from '../ExtensionConfig';
 import { ImportManager } from '../managers/ImportManager';
 import { CommandQuickPickItem, ResolveQuickPickItem } from '../models/QuickPickItems';
@@ -12,7 +12,7 @@ import { BaseExtension } from './BaseExtension';
 import { existsSync } from 'fs';
 import { inject, injectable } from 'inversify';
 import { join } from 'path';
-import { NOTIFICATIONS } from 'typescript-hero-common';
+import { NOTIFICATIONS, REQUESTS } from 'typescript-hero-common';
 import {
     commands,
     ExtensionContext,
@@ -71,9 +71,7 @@ export class ResolveExtension extends BaseExtension {
     constructor(
         @inject('LoggerFactory') loggerFactory: LoggerFactory,
         private pickProvider: ResolveQuickPickProvider,
-        private parser: TsResourceParser,
         private config: ExtensionConfig,
-        private index: ResolveIndex,
         private completionProvider: ResolveCompletionItemProvider,
         private client: ClientConnection
     ) {
@@ -120,7 +118,7 @@ export class ResolveExtension extends BaseExtension {
             ),
             new CommandQuickPickItem(
                 'Import resolver: Rebuild cache',
-                `currently: ${Object.keys(this.index.index).length} symbols`,
+                '',
                 'Does rebuild the whole symbol index.',
                 new TshCommand(() => this.refreshIndex())
             )
@@ -154,12 +152,12 @@ export class ResolveExtension extends BaseExtension {
         context.subscriptions.push(
             commands.registerCommand('typescriptHero.resolve.rebuildCache', () => this.refreshIndex())
         );
-        context.subscriptions.push(
-            languages.registerCompletionItemProvider('typescript', this.completionProvider)
-        );
-        context.subscriptions.push(
-            languages.registerCompletionItemProvider('typescriptreact', this.completionProvider)
-        );
+        // context.subscriptions.push(
+        //     languages.registerCompletionItemProvider('typescript', this.completionProvider)
+        // );
+        // context.subscriptions.push(
+        //     languages.registerCompletionItemProvider('typescriptreact', this.completionProvider)
+        // );
         context.subscriptions.push(this.statusBarItem);
 
         this.statusBarItem.text = resolverSyncing;
@@ -203,20 +201,27 @@ export class ResolveExtension extends BaseExtension {
      * @memberOf ResolveExtension
      */
     private async addImport(): Promise<void> {
-        if (!this.index.indexReady) {
-            this.showCacheWarning();
-            return;
-        }
-        try {
-            let newImport = await this.pickProvider.addImportPick(window.activeTextEditor.document);
-            if (newImport) {
-                this.logger.info('Add import to document', { resolveItem: newImport });
-                this.addImportToDocument(newImport);
-            }
-        } catch (e) {
-            this.logger.error('An error happend during import picking', e);
-            window.showErrorMessage('The import cannot be completed, there was an error during the process.');
-        }
+        // TODO : rework to only search for imports when at least 2 characters are typed.
+        // if (!(await this.client.sendRequest<boolean>(REQUESTS.IsResolveIndexReady))) {
+        //     this.showCacheWarning();
+        //     return;
+        // }
+        // try {
+        //     let declarations = await this.client.sendRequest<DeclarationInfo[]>(REQUESTS.GetDeclarationList, {
+        //         source: window.activeTextEditor.document.getText(),
+        //         fileName: window.activeTextEditor.document.fileName
+        //     });
+
+        //     console.log((declarations || []).length);
+        //     // let newImport = await this.pickProvider.addImportPick(window.activeTextEditor.document);
+        //     // if (newImport) {
+        //     //     this.logger.info('Add import to document', { resolveItem: newImport });
+        //     //     this.addImportToDocument(newImport);
+        //     // }
+        // } catch (e) {
+        //     this.logger.error('An error happend during import picking', e);
+        //     window.showErrorMessage('The import cannot be completed, there was an error during the process.');
+        // }
     }
 
     /**
@@ -230,7 +235,7 @@ export class ResolveExtension extends BaseExtension {
      * @memberOf ResolveExtension
      */
     private async addImportUnderCursor(): Promise<void> {
-        if (!this.index.indexReady) {
+        if (!(await this.client.sendRequest<boolean>(REQUESTS.IsResolveIndexReady))) {
             this.showCacheWarning();
             return;
         }
@@ -240,12 +245,27 @@ export class ResolveExtension extends BaseExtension {
         }
 
         try {
-            let newImport = await this.pickProvider.addImportUnderCursorPick(
-                window.activeTextEditor.document, selectedSymbol
-            );
-            if (newImport) {
-                this.logger.info('Add import to document', { resolveItem: newImport });
-                this.addImportToDocument(newImport);
+            let declarations = await this.client.sendRequest<DeclarationInfo[]>(REQUESTS.GetDeclarationList, {
+                source: window.activeTextEditor.document.getText(),
+                fileName: window.activeTextEditor.document.fileName,
+                filter: selectedSymbol
+            });
+
+            let resolveItems = declarations.map(o => new ResolveQuickPickItem(o)),
+                item: ResolveQuickPickItem;
+            if (resolveItems.length < 1) {
+                window.showInformationMessage(
+                    `The symbol '${selectedSymbol}' was not found in the index or is already imported.`
+                );
+                return;
+            } else if (resolveItems.length === 1 && resolveItems[0].label === selectedSymbol) {
+                item = resolveItems[0];
+            } else {
+                item = await window.showQuickPick(resolveItems, { placeHolder: 'Multiple declarations found:' });
+            }
+            if (item) {
+                this.logger.info('Add import to document', { resolveItem: item });
+                this.addImportToDocument(item);
             }
         } catch (e) {
             this.logger.error('An error happend during import picking', e);
@@ -263,13 +283,13 @@ export class ResolveExtension extends BaseExtension {
      * @memberOf ResolveExtension
      */
     private async addMissingImports(): Promise<void> {
-        if (!this.index.indexReady) {
+        if (!(await this.client.sendRequest<boolean>(REQUESTS.IsResolveIndexReady))) {
             this.showCacheWarning();
             return;
         }
         try {
             let ctrl = await ImportManager.create(window.activeTextEditor.document);
-            await ctrl.addMissingImports(this.index).commit();
+            //await ctrl.addMissingImports(this.index).commit();
         } catch (e) {
             this.logger.error('An error happend during import fixing', e);
             window.showErrorMessage('The operation cannot be completed, there was an error during the process.');

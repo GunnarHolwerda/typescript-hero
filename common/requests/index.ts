@@ -2,5 +2,7 @@
  * TODO
  */
 export const REQUESTS = {
-    ServerBuildIndexForFiles: 'server/buildIndexForFiles'
+    IsResolveIndexReady: 'server/isResolveIndexReady',
+    GetDeclarationList: 'server/getDeclarationList',
+    GetMissingImports: 'server/getMissingImports'
 };

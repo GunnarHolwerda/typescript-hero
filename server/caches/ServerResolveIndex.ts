@@ -10,6 +10,7 @@ import {
     ExtensionConfig,
     ModuleDeclaration,
     NOTIFICATIONS,
+    REQUESTS,
     ResolveIndex,
     ResourceIndex,
     TsAllFromExport,
@@ -18,6 +19,7 @@ import {
     TsFile,
     TsFromExport,
     TsNamedFromExport,
+    getDeclarationsFilteredByImports,
     TsNamedResource,
     TsResource,
     TsTypedExportableDeclaration
@@ -25,6 +27,12 @@ import {
 import { FileChangeType, FileEvent, InitializeParams } from 'vscode-languageserver';
 
 type Resources = { [name: string]: TsResource };
+
+type DeclarationListParams = {
+    source: string,
+    fileName: string,
+    filter?: string
+};
 
 /**
  * Returns the name of the node folder. Is used as the library name for indexing.
@@ -111,6 +119,10 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
         connection
             .onDidChangeWatchedFiles()
             .subscribe(events => this.watchedFilesChange(events.changes));
+        connection
+            .onRequest(REQUESTS.IsResolveIndexReady, () => this.indexReady);
+        connection
+            .onRequest(REQUESTS.GetDeclarationList, reqParams => this.getDeclarationList(reqParams));
 
         this.connection = connection;
     }
@@ -161,6 +173,43 @@ export class ServerResolveIndex implements Initializable, ResolveIndex {
     public reset(): void {
         this.parsedResources = Object.create(null);
         this._index = undefined;
+    }
+
+    /**
+     * TODO
+     * 
+     * @private
+     * @param {DeclarationListParams} params
+     * @returns {Promise<DeclarationInfo[]>}
+     * 
+     * @memberOf ServerResolveIndex
+     */
+    private async getDeclarationList({source, fileName, filter}: DeclarationListParams): Promise<DeclarationInfo[]> {
+        this.logger.info(`Create declaration list for '${fileName}' with filter '${filter || 'N/A'}'`);
+
+        let parsedSource = await this.parser.parseSource(source);
+
+        if (!parsedSource) {
+            this.logger.error(`Could not parse source of file '${fileName}'`);
+            return [];
+        }
+
+        let declarations = getDeclarationsFilteredByImports(
+            this.declarationInfos, this.rootUri || '', fileName, parsedSource.imports
+        );
+
+        if (filter) {
+            declarations = declarations.filter(o => o.declaration.name.startsWith(filter));
+        }
+
+        let activeDocumentDeclarations = parsedSource.declarations.map(o => o.name);
+
+        declarations = [
+            ...declarations.filter(o => o.from.startsWith('/')),
+            ...declarations.filter(o => !o.from.startsWith('/'))
+        ];
+
+        return declarations.filter(o => activeDocumentDeclarations.indexOf(o.declaration.name) === -1);
     }
 
     /**
