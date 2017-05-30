@@ -1,23 +1,10 @@
 {
-    "extends": "tslint:recommended",
-    "rulesDirectory": [
-        "node_modules/tslint-jsdoc-rules/lib"
+    "extends": [
+        "tslint-config-airbnb"
     ],
     "rules": {
-        "adjacent-overload-signatures": true,
-        "interface-name": [
-            true,
-            "never-prefix"
-        ],
-        "jsdoc-require": [
-            true,
-            "no-constructors",
-            "no-properties",
-            "no-private-properties"
-        ],
-        "member-access": [
-            true,
-            "check-accessor"
+        "max-line-length": [
+            125
         ],
         "member-ordering": [
             true,
@@ -39,31 +26,13 @@
                 ]
             }
         ],
-        "no-bitwise": false,
-        "no-default-export": true,
-        "no-invalid-this": true,
-        "no-namespace": [
+        "ter-indent": [
             true,
-            "allow-declarations"
+            4,
+            {
+                "SwitchCase": 1
+            }
         ],
-        "no-string-literal": false,
-        "no-unused-variable": true,
-        "object-literal-key-quotes": [
-            false,
-            "as-needed"
-        ],
-        "one-variable-per-declaration": false,
-        "only-arrow-functions": [
-            true,
-            "allow-declarations"
-        ],
-        "quotemark": [
-            true,
-            "single",
-            "avoid-escape"
-        ],
-        "trailing-comma": false,
-        "triple-equals": true,
         "typedef": [
             true,
             "call-signature",
@@ -73,18 +42,9 @@
         ],
         "variable-name": [
             true,
-            "ban-keywords",
             "check-format",
-            "allow-pascal-case",
-            "allow-leading-underscore"
-        ],
-        "whitespace": [
-            true,
-            "check-branch",
-            "check-decl",
-            "check-operator",
-            "check-separator",
-            "check-type"
+            "allow-leading-underscore",
+            "allow-pascal-case"
         ]
     }
 }
