@@ -7,7 +7,7 @@
     "color": "#1e324c",
     "theme": "dark"
   },
-  "version": "0.12.0",
+  "version": "0.13.0",
   "publisher": "rbbit",
   "engines": {
     "vscode": "^1.6.0",
@@ -35,7 +35,7 @@
   },
   "homepage": "https://buehler.github.io/typescript-hero/",
   "scripts": {
-    "vscode:prepublish": "yarn install && yarn run build && npm prune --production",
+    "vscode:prepublish": "npm install && npm run build && npm prune --production",
     "predevelop": "yarn del ./out",
     "develop": "tsc",
     "postinstall": "node ./node_modules/vscode/bin/install",
@@ -190,24 +190,6 @@
           "type": "boolean",
           "default": false,
           "description": "Defines if sorting is disable during organize imports"
-        },
-        "typescriptHero.restartDebugger.watchFolders": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "uniqueItems": true,
-          "default": [
-            "build",
-            "out",
-            "dist"
-          ],
-          "description": "Defines the folders that are watched for filechanges to restart the debugger."
-        },
-        "typescriptHero.restartDebugger.active": {
-          "type": "boolean",
-          "default": true,
-          "description": "Defines if the restart debugger extension is active at startup."
         }
       }
     }
