@@ -5,9 +5,17 @@
             "name": "Launch Extension",
             "type": "extensionHost",
             "request": "launch",
+            "windows": {
+              "preLaunchTask": "debug-win"
+            },
+            "linux": {
+                "preLaunchTask": "debug"
+            },
+            "osx": {
+                "preLaunchTask": "debug"
+            },
             "runtimeExecutable": "${execPath}",
             "args": [
-                "${workspaceRoot}/test/_workspace",
                 "--extensionDevelopmentPath=${workspaceRoot}"
             ],
             "stopOnEntry": false,
@@ -20,6 +28,15 @@
             "name": "Launch Tests",
             "type": "extensionHost",
             "request": "launch",
+            "windows": {
+              "preLaunchTask": "build-win"
+            },
+            "linux": {
+                "preLaunchTask": "build"
+            },
+            "osx": {
+                "preLaunchTask": "build"
+            },
             "runtimeExecutable": "${execPath}",
             "args": [
                 "${workspaceRoot}/test/_workspace",

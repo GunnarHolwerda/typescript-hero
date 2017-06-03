@@ -42,7 +42,10 @@
     "pretest": "yarn del ./out && tsc -p ./config/tsconfig.test.json && yarn run lint",
     "test": "node ./node_modules/vscode/bin/test",
     "lint": "tslint -c tslint.json --project ./config/tsconfig.build.json",
-    "build": "yarn del ./out && tsc -p ./config/tsconfig.build.json",
+    "build-win": "del-cli ./out & tsc -p ./config/tsconfig.build.json",
+    "build": "del ./out & tsc -p ./config/tsconfig.build.json",
+    "debug-win": "del-cli ./out & tsc -p ./config/tsconfig.debug.json",
+    "debug": "del ./out & tsc -p ./config/tsconfig.debug.json",
     "package": "yarn run build && yarn del './*.vsix' && vsce package"
   },
   "devDependencies": {
