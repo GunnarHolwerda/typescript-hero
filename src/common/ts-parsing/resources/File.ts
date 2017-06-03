@@ -1,3 +1,4 @@
+import { normalizePathUri } from '../../helpers/PathHelpers';
 import { Declaration } from '../declarations';
 import { Export } from '../exports';
 import { Import } from '../imports';
@@ -58,7 +59,7 @@ export class File implements Resource, Node {
      * 
      * @readonly
      * @type {ParsedPath}
-     * @memberOf File
+     * @memberof File
      */
     public get parsedPath(): ParsedPath {
         return parse(this.filePath);
@@ -69,13 +70,13 @@ export class File implements Resource, Node {
      * 
      * @readonly
      * @type {boolean}
-     * @memberOf File
+     * @memberof File
      */
     public get isWorkspaceFile(): boolean {
         return ['node_modules', 'typings'].every(o => this.filePath.indexOf(o) === -1);
     }
 
     constructor(public filePath: string, rootPath: string, public start: number, public end: number) {
-        this.rootPath = rootPath.replace('file://', '');
+        this.rootPath = normalizePathUri(rootPath);
     }
 }

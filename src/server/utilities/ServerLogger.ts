@@ -49,7 +49,7 @@ export class ServerLogger implements Logger {
      * @param {string} message
      * @param {*} [data]
      * 
-     * @memberOf Logger
+     * @memberof Logger
      */
     public error(message: string, data?: any): void {
         this.log(LogLevel.Errors, MessageType.Error, message, data);
@@ -61,7 +61,7 @@ export class ServerLogger implements Logger {
      * @param {string} message
      * @param {*} [data]
      * 
-     * @memberOf Logger
+     * @memberof Logger
      */
     public warning(message: string, data?: any): void {
         this.log(LogLevel.Warnings, MessageType.Warning, message, data);
@@ -73,7 +73,7 @@ export class ServerLogger implements Logger {
      * @param {string} message
      * @param {*} [data]
      * 
-     * @memberOf Logger
+     * @memberof Logger
      */
     public info(message: string, data?: any): void {
         this.log(LogLevel.All, MessageType.Info, message, data);
@@ -86,21 +86,21 @@ export class ServerLogger implements Logger {
      * @private
      * @param {LogLevel} level
      * @param {MessageType} type
-     * @param {string} message
+     * @param {string} payload
      * @param {*} [data]
      * 
-     * @memberOf Logger
+     * @memberof Logger
      */
-    private log(level: LogLevel, type: MessageType, message: string, data?: any): void {
-        let payload = message;
+    private log(level: LogLevel, type: MessageType, payload: string, data?: any): void {
+        let message = payload;
         if (this.configuration && getLogLevel(this.configuration.verbosity) >= level) {
-            payload = `${this.prefix ? this.prefix + ' - ' : ''}${payload}`;
+            message = `${this.prefix ? this.prefix + ' - ' : ''}${message}`;
             if (data) {
-                payload += `\n\tData:\t${util.inspect(data, {})}`;
+                message += `\n\tData:\t${util.inspect(data, {})}`;
             }
-            this.connection.sendNotification('window/logMessage', { type, payload });
+            this.connection.sendNotification('window/logMessage', { type, message });
         } else if (!this.configuration && this.messageBuffer) {
-            this.messageBuffer.push({ level, type, message: payload, data });
+            this.messageBuffer.push({ level, type, message, data });
         }
     }
 
@@ -111,7 +111,7 @@ export class ServerLogger implements Logger {
      * 
      * @private
      * 
-     * @memberOf Logger
+     * @memberof Logger
      */
     private trySendBuffer(): void {
         if (this.configuration && this.messageBuffer) {
